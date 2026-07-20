@@ -14,9 +14,9 @@ const VIDEOS = [
     date: "Czerwiec 2026"
   },
   {
-    title: "Legenda o Popielu i myszach",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    description: "Skąd wzięła się nazwa Mysiej Wieży? Opowiadam legendę, która trzyma się miasta od wieków.",
+    title: "Zapowiedź Festynu Dla Nadii",
+    url: "https://www.tiktok.com/@.younior/video/7654885805390892321",
+    description: "❤️ 𝗗𝗟𝗔 NADII. 𝗗𝗟𝗔 NADZIEI. 𝗗𝗟𝗔 PRZYSZŁOŚCI. ❤️",
     date: "Maj 2026"
   },
   {
