@@ -11,19 +11,19 @@ const VIDEOS = [
     title: "GOPLANA 2026 - Kruszwica",
     url: "https://www.youtube.com/watch?v=wr0AVF9Cnzo",
     description: "🎥 Goplana 2026 już za nami, ale wspomnienia wciąż pozostają żywe. ✨",
-    date: "Czerwiec 2026"
+    date: "Lipiec 2026"
   },
   {
     title: "Zapowiedź Festynu Dla Nadii",
     url: "https://www.tiktok.com/@.younior/video/7654885805390892321",
     description: "❤️ 𝗗𝗟𝗔 NADII. 𝗗𝗟𝗔 NADZIEI. 𝗗𝗟𝗔 PRZYSZŁOŚCI. ❤️",
-    date: "Maj 2026"
+    date: "Czerwiec 2026"
   },
   {
     title: "Średniowieczna „Agnes” zwodowana na Gople",
     url: "https://www.youtube.com/watch?v=Wn0EIC-MuXc",
     description: "Kruszwica z innej strony! Zabieram Was w wyjątkową podróż w czasie.",
-    date: "Kwiecień 2026"
+    date: "Maj 2026"
   }
 ];
 
