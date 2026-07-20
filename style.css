@@ -23,7 +23,7 @@ body{
   font-weight: 400;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: 75px; /* Odstęp na stałą belkę reklamową na dole */
+  padding-bottom: 85px; /* Odstęp na stałą belkę reklamową na dole */
 }
 
 ::selection{ background: var(--gold); color: #0a0a09; }
@@ -207,8 +207,24 @@ a{ color: inherit; text-decoration: none; }
   display:grid; grid-template-columns: 1.3fr 0.7fr; gap: 40px; align-items:center;
 }
 .about-text p{ color: var(--dim); font-size: 1rem; margin-bottom: 1rem; }
-.about-mark{ display:flex; justify-content:center; }
-.about-logo{ width: 100%; max-width: 280px; opacity: 0.92; }
+.about-media{ 
+  display:flex; 
+  flex-direction: column; 
+  align-items:center; 
+  gap: 20px; 
+}
+
+/* Małe zdjęcie profilowe w kole (FB style) */
+.about-avatar{
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--gold);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.about-logo{ width: 100%; max-width: 200px; opacity: 0.92; }
 
 /* ---------- SUPPORT ---------- */
 .support{
@@ -380,12 +396,14 @@ a{ color: inherit; text-decoration: none; }
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow-x: auto;
 }
 
 .ad-content {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  flex-wrap: nowrap;
 }
 
 .ad-label {
@@ -394,18 +412,20 @@ a{ color: inherit; text-decoration: none; }
   letter-spacing: 1px;
   color: #555555;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .ad-logo {
-  height: 42px;
+  height: 38px;
   width: auto;
   display: block;
   border-radius: 4px;
   transition: transform 0.2s ease;
+  object-fit: contain;
 }
 
 .ad-logo:hover {
-  transform: scale(1.04);
+  transform: scale(1.06);
 }
 
 /* ---------- RESPONSIVE (MOBILE) ---------- */
@@ -433,8 +453,8 @@ a{ color: inherit; text-decoration: none; }
   }
 
   .about-grid{ grid-template-columns: 1fr; }
-  .about-mark{ order:-1; }
-  .about-logo{ max-width: 200px; }
+  .about-media{ order:-1; margin-bottom: 10px; }
+  .about-logo{ max-width: 160px; }
   .tower-mark{ opacity: 0.12; width: 160px; right: -30px; }
 
   .hero{ padding: 60px 24px 80px; min-height: auto; }
@@ -446,6 +466,10 @@ a{ color: inherit; text-decoration: none; }
   }
   .contact-links a{
     text-align: center;
+  }
+  
+  .ad-logo {
+    height: 32px;
   }
 }
 
