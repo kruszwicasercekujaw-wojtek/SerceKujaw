@@ -8,9 +8,9 @@
    ============================================================ */
 const VIDEOS = [
   {
-    title: "Mysia Wieża o świcie",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    description: "Kruszwica zanim obudzi się miasto — mgła nad Gopłem i widok z wieży Popiela.",
+    title: "GOPLANA 2026 - Kruszwica",
+    url: "https://www.youtube.com/watch?v=wr0AVF9Cnzo",
+    description: "🎥 Goplana 2026 już za nami, ale wspomnienia wciąż pozostają żywe. ✨",
     date: "Czerwiec 2026"
   },
   {
