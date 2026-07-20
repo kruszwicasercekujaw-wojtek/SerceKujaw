@@ -20,9 +20,9 @@ const VIDEOS = [
     date: "Maj 2026"
   },
   {
-    title: "Spacer nabrzeżem Gopła",
-    url: "https://www.tiktok.com/@example/video/1234567890",
-    description: "Kruszwica z innej strony — nabrzeże, rybacy i wieczorne światło nad jeziorem.",
+    title: "Średniowieczna „Agnes” zwodowana na Gople",
+    url: "https://www.youtube.com/watch?v=Wn0EIC-MuXc",
+    description: "Kruszwica z innej strony! Zabieram Was w wyjątkową podróż w czasie.",
     date: "Kwiecień 2026"
   }
 ];
