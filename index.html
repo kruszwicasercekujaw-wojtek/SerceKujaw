@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Serce Kujaw — Kruszwica na filmach</title>
+<meta name="description" content="Portfolio wideo — Kruszwica, Serce Kujaw. Filmy, relacje i historie z miasta nad Gopłem.">
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bad+Script&family=Inter:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="nav-brand">
+      <img src="assets/logo.png" alt="Serce Kujaw logo" class="nav-logo">
+    </a>
+    <nav class="nav-links">
+      <a href="#filmy">Filmy</a>
+      <a href="#o-mnie">O mnie</a>
+      <a href="#kontakt">Kontakt</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <svg class="tower-mark" viewBox="0 0 220 420" aria-hidden="true">
+      <g fill="none" stroke="currentColor" stroke-width="1.4">
+        <path d="M70 420 L70 90 L110 40 L150 90 L150 420" />
+        <path d="M70 90 L150 90" />
+        <path d="M78 130 L142 130 M78 175 L142 175 M78 220 L142 220 M78 265 L142 265 M78 310 L142 310 M78 355 L142 355" opacity="0.5"/>
+        <path d="M110 40 L110 420" opacity="0.4" stroke-dasharray="2 6"/>
+        <circle cx="95" cy="150" r="2.5" fill="currentColor" stroke="none"/>
+        <circle cx="125" cy="150" r="2.5" fill="currentColor" stroke="none"/>
+        <circle cx="95" cy="195" r="2.5" fill="currentColor" stroke="none"/>
+        <circle cx="125" cy="195" r="2.5" fill="currentColor" stroke="none"/>
+        <circle cx="95" cy="240" r="2.5" fill="currentColor" stroke="none"/>
+        <circle cx="125" cy="240" r="2.5" fill="currentColor" stroke="none"/>
+        <circle cx="95" cy="285" r="2.5" fill="currentColor" stroke="none"/>
+        <circle cx="125" cy="285" r="2.5" fill="currentColor" stroke="none"/>
+        <path d="M50 400 L70 380 L70 420 Z" opacity="0.6"/>
+        <path d="M50 400 L20 400 M20 400 L20 415 M35 400 L35 415" opacity="0.4"/>
+      </g>
+    </svg>
+
+    <p class="eyebrow">Kruszwica &middot; nad Gopłem</p>
+    <h1 class="headline">
+      Serce <span class="script">Kujaw</span><br>na wideo
+    </h1>
+    <p class="hero-sub">
+      Filmuję miasto, ludzi i chwile znad Gopła — od Mysiej Wieży po lokalne historie,
+      których nie usłyszysz nigdzie indziej.
+    </p>
+    <a href="#filmy" class="btn-primary">Zobacz filmy ↓</a>
+
+    <div class="hero-line" aria-hidden="true"></div>
+  </section>
+
+  <!-- FILMY -->
+  <section class="films" id="filmy">
+    <div class="section-head">
+      <span class="section-num">Materiały</span>
+      <h2>Filmy</h2>
+      <p class="section-sub">Kliknij, żeby obejrzeć na YouTube / TikToku.</p>
+    </div>
+
+    <div class="film-grid" id="filmGrid">
+      <!-- cards injected by script.js -->
+    </div>
+
+    <p class="empty-state" id="emptyState" hidden>
+      Na razie pusto — pierwszy film pojawi się tu lada moment.
+    </p>
+  </section>
+
+  <!-- O MNIE -->
+  <section class="about" id="o-mnie">
+    <div class="about-grid">
+      <div class="about-text">
+        <span class="section-num">Kim jestem</span>
+        <h2>Kruszwica to nie punkt na mapie.<br>To miejsce, które opowiadam.</h2>
+        <p>
+          Nagrywam Kruszwicę i całe Kujawy — od legendy o Popielu i myszach,
+          przez życie miasta dziś, po ludzi, którzy je tworzą. Bez sztywnego
+          scenariusza, za to z kamerą zawsze tam, gdzie coś się dzieje.
+        </p>
+      </div>
+      <div class="about-mark" aria-hidden="true">
+        <img src="assets/logo.png" alt="" class="about-logo">
+      </div>
+    </div>
+  </section>
+
+  <!-- KONTAKT -->
+  <section class="contact" id="kontakt">
+    <h2>Masz historię do pokazania?</h2>
+    <p>Napisz — chętnie nagram i opowiem.</p>
+    <div class="contact-links" id="contactLinks">
+      <!-- injected by script.js -->
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <img src="assets/logo.png" alt="Serce Kujaw" class="footer-logo">
+  <p>&copy; <span id="year"></span> Serce Kujaw — Kruszwica</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
