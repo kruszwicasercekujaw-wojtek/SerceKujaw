@@ -31,10 +31,10 @@ const VIDEOS = [
    DANE KONTAKTOWE — edytuj linki poniżej
    ============================================================ */
 const CONTACT_LINKS = [
-  { label: "Facebook", url: "https://facebook.com" },
-  { label: "YouTube", url: "https://youtube.com" },
-  { label: "TikTok", url: "https://tiktok.com" },
-  { label: "E-mail", url: "mailto:kontakt@sercekujaw.pl" }
+  { label: "Facebook", url: "https://www.facebook.com/KruszwicaSerceKujaw" },
+  { label: "YouTube", url: "https://www.youtube.com/@Kruszwica-SerceKujaw" },
+  { label: "TikTok", url: "https://www.tiktok.com/@.younior" },
+  { label: "E-mail", url: "mailto:kruszwicasercekujaw@gmail.com" }
 ];
 
 /* ---------- pomocnicze ---------- */
