@@ -26,9 +26,9 @@ const VIDEOS = [
     date: "Maj 2026"
   },
   {
-    title: "Materiały wideo z Kruszwicy",
+    title: "Kujawskie Nowalijki 2026",
     url: "https://www.facebook.com/reel/3074858836040893",
-    description: "Zobacz najnowsze nagranie z Kruszwicy bezpośrednio na stronie!",
+    description: "🌿 Smaki, tradycja, muzyka i wyjątkowa atmosfera.",
     date: "Lipiec 2026"
   }
 ];
