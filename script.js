@@ -28,7 +28,7 @@ const VIDEOS = [
 ];
 
 /* ============================================================
-   DANE KONTAKTOWE — edytuj linki poniżej
+   DANE KONTAKTOWE
    ============================================================ */
 const CONTACT_LINKS = [
   { label: "Facebook", url: "https://www.facebook.com/KruszwicaSerceKujaw" },
@@ -50,7 +50,7 @@ function heartPlayIcon(){
   </svg>`;
 }
 
-function buildCard(video){
+function buildCard(video, index){
   const ytId = getYouTubeId(video.url);
   const thumbSrc = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null;
 
@@ -59,7 +59,7 @@ function buildCard(video){
     : "";
 
   return `
-  <a class="film-card" href="${video.url}" target="_blank" rel="noopener noreferrer">
+  <div class="film-card" data-index="${index}" style="cursor: pointer;">
     <div class="film-thumb">
       ${thumbHTML}
       <div class="play-heart">${heartPlayIcon()}</div>
@@ -68,15 +68,99 @@ function buildCard(video){
       ${video.date ? `<span class="film-date">${escapeHtml(video.date)}</span>` : ""}
       <h3 class="film-title">${escapeHtml(video.title)}</h3>
       <p class="film-desc">${escapeHtml(video.description)}</p>
-      <span class="film-link">Obejrzyj</span>
+      <span class="film-link">Odtwórz na stronie</span>
     </div>
-  </a>`;
+  </div>`;
 }
 
 function escapeHtml(str){
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
+}
+
+/* ---------- ODTWARZACZ MODALNY (POP-UP) ---------- */
+function setupModal() {
+  // Stwórz kontener modala w HTML
+  const modalHTML = `
+    <div class="video-modal" id="videoModal" aria-hidden="true">
+      <div class="video-modal-overlay" id="modalOverlay"></div>
+      <div class="video-modal-content">
+        <button class="video-modal-close" id="modalClose" aria-label="Zamknij">&times;</button>
+        <div class="video-modal-body" id="modalBody"></div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+  const modal = document.getElementById("videoModal");
+  const modalBody = document.getElementById("modalBody");
+  const overlay = document.getElementById("modalOverlay");
+  const closeBtn = document.getElementById("modalClose");
+
+  function openModal(videoIndex) {
+    const video = VIDEOS[videoIndex];
+    if (!video) return;
+
+    const ytId = getYouTubeId(video.url);
+
+    if (ytId) {
+      // Jeśli to YouTube – osadź player
+      modalBody.innerHTML = `
+        <div class="video-responsive">
+          <iframe 
+            src="https://www.youtube.com/embed/${ytId}?autoplay=1" 
+            title="${escapeHtml(video.title)}" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+          </iframe>
+        </div>
+        <h3 class="modal-title">${escapeHtml(video.title)}</h3>
+        <p class="modal-desc">${escapeHtml(video.description)}</p>
+      `;
+    } else {
+      // Dla serwisów TikTok / inne
+      modalBody.innerHTML = `
+        <div class="modal-external-notice">
+          <h3 class="modal-title">${escapeHtml(video.title)}</h3>
+          <p class="modal-desc">${escapeHtml(video.description)}</p>
+          <a href="${video.url}" target="_blank" rel="noopener noreferrer" class="btn-primary" style="margin-top: 15px;">
+            Otwórz materiał na TikToku / Instagramie ↗
+          </a>
+        </div>
+      `;
+    }
+
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden"; // Blokuj przewijanie tła
+  }
+
+  function closeModal() {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    modalBody.innerHTML = ""; // Czyszczenie iframe (zatrzymuje dźwięk!)
+    document.body.style.overflow = "";
+  }
+
+  // Zdarzenia zamykania
+  overlay.addEventListener("click", closeModal);
+  closeBtn.addEventListener("click", closeModal);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("open")) {
+      closeModal();
+    }
+  });
+
+  // Obsługa kliknięcia w karty filmów
+  document.getElementById("filmGrid").addEventListener("click", (e) => {
+    const card = e.target.closest(".film-card");
+    if (card) {
+      const index = card.getAttribute("data-index");
+      openModal(index);
+    }
+  });
 }
 
 function render(){
@@ -97,6 +181,25 @@ function render(){
   ).join("");
 
   document.getElementById("year").textContent = new Date().getFullYear();
+
+  // Obsługa menu mobilnego
+  const navToggle = document.getElementById("navToggle");
+  const navLinks = document.getElementById("navLinks");
+
+  if (navToggle && navLinks) {
+    navToggle.addEventListener("click", () => {
+      navLinks.classList.toggle("active");
+    });
+
+    navLinks.querySelectorAll("a").forEach(link => {
+      link.addEventListener("click", () => {
+        navLinks.classList.remove("active");
+      });
+    });
+  }
+
+  // Inicjalizacja pop-upa wideo
+  setupModal();
 }
 
 document.addEventListener("DOMContentLoaded", render);
