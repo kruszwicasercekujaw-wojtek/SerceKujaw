@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kruszwica-Serce Kujaw </title>
+<title>Kruszwica-Serce Kujaw</title>
 <meta name="description" content="Portfolio wideo — Kruszwica, Serce Kujaw. Filmy, relacje i historie z miasta nad Gopłem.">
 <link rel="icon" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,7 +31,7 @@
     <nav class="nav-links" id="navLinks">
       <a href="#filmy">Filmy</a>
       <a href="#o-mnie">O mnie</a>
-      <a href="#wesprzyj-mnie" class="nav-support">WESPRZYJ MNIE</a>
+      <a href="#wesprzyj-mnie" class="nav-support" id="supportNavBtn">WESPRZYJ MNIE</a>
       <a href="#kontakt">Kontakt</a>
     </nav>
   </div>
@@ -79,11 +79,11 @@
     <div class="section-head">
       <span class="section-num">Materiały</span>
       <h2>Filmy</h2>
-      <p class="section-sub">Kliknij, żeby obejrzeć na YouTube / TikToku.</p>
+      <p class="section-sub">Kliknij, żeby obejrzeć na stronie.</p>
     </div>
 
     <div class="film-grid" id="filmGrid">
-      <!-- cards injected by script.js -->
+      <!-- karty wstrzykiwane przez script.js -->
     </div>
 
     <p class="empty-state" id="emptyState" hidden>
@@ -127,7 +127,7 @@
       
       <div class="support-action">
         <span>➡️ Wjedź na stronę:</span>
-        <a href="https://buycoffee.to/SerceKujaw" target="_blank" rel="noopener noreferrer" class="btn-primary">
+        <a href="https://buycoffee.to/SerceKujaw" target="_blank" rel="noopener noreferrer" class="btn-primary" id="buyCoffeeLink">
           buycoffee.to/SerceKujaw
         </a>
       </div>
@@ -141,7 +141,7 @@
     <h2>Masz historię do pokazania?</h2>
     <p>Napisz!</p>
     <div class="contact-links" id="contactLinks">
-      <!-- injected by script.js -->
+      <!-- wstrzykiwane przez script.js -->
     </div>
   </section>
 
@@ -151,6 +151,16 @@
   <img src="assets/logo.png" alt="Serce Kujaw" class="footer-logo">
   <p>&copy; <span id="year"></span> Serce Kujaw — Kruszwica</p>
 </footer>
+
+<!-- STAŁA BELKA REKLAMOWA NA DOLE -->
+<div class="bottom-ad-bar">
+  <div class="ad-content">
+    <span class="ad-label">Sponsor:</span>
+    <a href="https://www.facebook.com/wakacjepltorunstawki" target="_blank" rel="noopener noreferrer">
+      <img src="347090093_789037562545828_1840140570226317086_n.jpg" alt="Wakacje.pl Toruń Stawki" class="ad-logo">
+    </a>
+  </div>
+</div>
 
 <script src="script.js"></script>
 </body>
