@@ -235,6 +235,23 @@ function render(){
     });
   }
 
+  // Akcja dla przycisku WESPRZYJ MNIE w nawigacji: płynne przewinięcie i natychmiastowe otwarcie linku
+  const supportNavBtn = document.getElementById("supportNavBtn");
+  if (supportNavBtn) {
+    supportNavBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      
+      // Płynne przewinięcie do sekcji
+      const supportSection = document.getElementById("wesprzyj-mnie");
+      if (supportSection) {
+        supportSection.scrollIntoView({ behavior: "smooth" });
+      }
+
+      // Otwarcie linku BuyCoffee w nowej karcie
+      window.open("https://buycoffee.to/SerceKujaw", "_blank", "noopener,noreferrer");
+    });
+  }
+
   // Inicjalizacja odtwarzacza modalnego
   setupModal();
 }
