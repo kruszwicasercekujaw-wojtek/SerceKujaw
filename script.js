@@ -2,7 +2,7 @@
    DODAWANIE FILMÓW
    Skopiuj obiekt poniżej i wklej nowy wiersz do tablicy VIDEOS.
    - title: tytuł filmu
-   - url: pełny link (YouTube, TikTok, Instagram...)
+   - url: pełny link (YouTube, Facebook, TikTok, Instagram...)
    - description: krótki opis
    - date: np. "Lipiec 2026" (opcjonalne, może być puste "")
    ============================================================ */
@@ -24,6 +24,12 @@ const VIDEOS = [
     url: "https://www.youtube.com/watch?v=Wn0EIC-MuXc",
     description: "Kruszwica z innej strony! Zabieram Was w wyjątkową podróż w czasie.",
     date: "Maj 2026"
+  },
+  {
+    title: "Materiały wideo z Kruszwicy",
+    url: "https://www.facebook.com/share/v/18KRiaZWDg/",
+    description: "Zobacz najnowsze nagranie z Kruszwicy bezpośrednio na stronie!",
+    date: "Lipiec 2026"
   }
 ];
 
@@ -41,6 +47,11 @@ const CONTACT_LINKS = [
 function getYouTubeId(url){
   const m = url.match(/(?:youtu\.be\/|v=|shorts\/)([A-Za-z0-9_-]{11})/);
   return m ? m[1] : null;
+}
+
+function getFacebookUrl(url) {
+  const isFb = url.includes("facebook.com") || url.includes("fb.watch") || url.includes("fb.com");
+  return isFb ? encodeURIComponent(url) : null;
 }
 
 function heartPlayIcon(){
@@ -81,7 +92,6 @@ function escapeHtml(str){
 
 /* ---------- ODTWARZACZ MODALNY (POP-UP) ---------- */
 function setupModal() {
-  // Stwórz kontener modala w HTML
   const modalHTML = `
     <div class="video-modal" id="videoModal" aria-hidden="true">
       <div class="video-modal-overlay" id="modalOverlay"></div>
@@ -103,9 +113,10 @@ function setupModal() {
     if (!video) return;
 
     const ytId = getYouTubeId(video.url);
+    const fbUrl = getFacebookUrl(video.url);
 
     if (ytId) {
-      // Jeśli to YouTube – osadź player
+      // YouTube Embed
       modalBody.innerHTML = `
         <div class="video-responsive">
           <iframe 
@@ -119,8 +130,26 @@ function setupModal() {
         <h3 class="modal-title">${escapeHtml(video.title)}</h3>
         <p class="modal-desc">${escapeHtml(video.description)}</p>
       `;
+    } else if (fbUrl) {
+      // Facebook Embed
+      modalBody.innerHTML = `
+        <div class="video-responsive">
+          <iframe 
+            src="https://www.facebook.com/plugins/video.php?href=${fbUrl}&show_text=false&autoplay=true" 
+            width="100%" 
+            height="100%" 
+            style="border:none;overflow:hidden" 
+            scrolling="no" 
+            frameborder="0" 
+            allowfullscreen="true" 
+            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
+          </iframe>
+        </div>
+        <h3 class="modal-title">${escapeHtml(video.title)}</h3>
+        <p class="modal-desc">${escapeHtml(video.description)}</p>
+      `;
     } else {
-      // Dla serwisów TikTok / inne
+      // Dla TikTok / Instagram / Inne
       modalBody.innerHTML = `
         <div class="modal-external-notice">
           <h3 class="modal-title">${escapeHtml(video.title)}</h3>
@@ -134,17 +163,16 @@ function setupModal() {
 
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden"; // Blokuj przewijanie tła
+    document.body.style.overflow = "hidden";
   }
 
   function closeModal() {
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
-    modalBody.innerHTML = ""; // Czyszczenie iframe (zatrzymuje dźwięk!)
+    modalBody.innerHTML = ""; // Czyszczenie iframe zatrzymuje odtwarzany dźwięk
     document.body.style.overflow = "";
   }
 
-  // Zdarzenia zamykania
   overlay.addEventListener("click", closeModal);
   closeBtn.addEventListener("click", closeModal);
   document.addEventListener("keydown", (e) => {
@@ -153,7 +181,6 @@ function setupModal() {
     }
   });
 
-  // Obsługa kliknięcia w karty filmów
   document.getElementById("filmGrid").addEventListener("click", (e) => {
     const card = e.target.closest(".film-card");
     if (card) {
@@ -198,7 +225,7 @@ function render(){
     });
   }
 
-  // Inicjalizacja pop-upa wideo
+  // Inicjalizacja podglądu wideo
   setupModal();
 }
 
