@@ -29,7 +29,7 @@ const VIDEOS = [
     title: "Kujawskie Nowalijki 2026",
     url: "https://www.facebook.com/reel/3074858836040893",
     description: "🌿 Smaki, tradycja, muzyka i wyjątkowa atmosfera.",
-    date: "Lipiec 2026"
+    date: "Czerwiec 2026"
   }
 ];
 
