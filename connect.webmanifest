@@ -1,5 +1,5 @@
 {
-  "name": "Serce Kujaw — Wyślij zdjęcie",
+  "name": "Connect - Serce Kujaw",
   "short_name": "Connect",
   "description": "Wyślij zdjęcie z Kruszwicy do Serce Kujaw — może pojawi się na stronie lub w kolejnym materiale.",
   "start_url": "/connect.html?source=pwa",

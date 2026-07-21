@@ -17,7 +17,10 @@ const SHELL_FILES = [
   "/connect.js",
   "/assets/logo.png",
   "/assets/icon-192.png",
-  "/assets/icon-512.png"
+  "/assets/icon-192-maskable.png",
+  "/assets/icon-512.png",
+  "/assets/icon-512-maskable.png",
+  "/assets/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", (event) => {
