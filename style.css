@@ -91,6 +91,7 @@ a{ color: inherit; text-decoration: none; }
 .tower-mark{
   position:absolute; right: -20px; top: 50%; transform: translateY(-50%);
   width: 260px; height: auto; color: var(--stone); opacity: 0.35;
+  will-change: transform, opacity;
 }
 .eyebrow{
   font-family:'Inter'; font-size: 0.82rem; letter-spacing: 0.22em; text-transform: uppercase;

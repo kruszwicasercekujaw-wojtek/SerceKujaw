@@ -257,3 +257,79 @@ function render(){
 }
 
 document.addEventListener("DOMContentLoaded", render);
+
+/* ============================================================
+   PARALAKSA W SEKCJI HERO
+   Wieża w tle porusza się wolniej niż scroll (efekt głębi),
+   tekst przesuwa się szybciej i zanika. Dodatkowo lekka
+   reakcja na ruch myszą (tylko desktop).
+   ============================================================ */
+function setupHeroParallax() {
+  const hero = document.getElementById("top");
+  const tower = document.querySelector(".tower-mark");
+  const headline = document.querySelector(".headline");
+  const sub = document.querySelector(".hero-sub");
+  const eyebrow = document.querySelector(".eyebrow");
+  const btn = document.querySelector(".hero .btn-primary");
+
+  if (!hero || !tower) return;
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) return;
+
+  let mouseX = 0, mouseY = 0;
+  let ticking = false;
+
+  function update() {
+    const scrollY = window.scrollY || window.pageYOffset;
+    const heroHeight = hero.offsetHeight;
+    const progress = Math.min(scrollY / heroHeight, 1); // 0 → 1 w miarę scrollowania hero
+
+    // Wieża: zachowujemy oryginalne centrowanie (translateY(-50%)) i dokładamy ruch
+    const towerY = scrollY * 0.35 + mouseY * 10;
+    const towerX = mouseX * 10;
+    const scale = 1 + progress * 0.08;
+    tower.style.transform =
+      `translate(${towerX}px, calc(-50% + ${towerY}px)) scale(${scale})`;
+    tower.style.opacity = 1 - progress * 0.6;
+
+    // Tekst: przesuwa się szybciej niż tło i lekko znika przy scrollu
+    const textY = scrollY * 0.55;
+    const textOpacity = Math.max(1 - progress * 1.3, 0);
+    [headline, sub, eyebrow, btn].forEach((el) => {
+      if (el) {
+        el.style.transform = `translateY(${textY}px)`;
+        el.style.opacity = textOpacity;
+      }
+    });
+
+    ticking = false;
+  }
+
+  function onScroll() {
+    if (!ticking) {
+      window.requestAnimationFrame(update);
+      ticking = true;
+    }
+  }
+
+  function onMouseMove(e) {
+    const rect = hero.getBoundingClientRect();
+    // Wartości od -1 do 1 względem środka sekcji hero
+    mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+    mouseY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    onScroll();
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  hero.addEventListener("mousemove", onMouseMove);
+  hero.addEventListener("mouseleave", () => {
+    mouseX = 0;
+    mouseY = 0;
+    onScroll();
+  });
+
+  update();
+}
+
+document.addEventListener("DOMContentLoaded", setupHeroParallax);
