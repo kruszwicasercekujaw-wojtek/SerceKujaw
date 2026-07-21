@@ -101,7 +101,7 @@ function setupPhotoForm() {
       showError(`Plik "${tooBig.name}" jest za duży (max ${MAX_FILE_SIZE_MB} MB).`);
       return;
     }
-    if (WEB3FORMS_ACCESS_KEY === "WSTAW-TUTAJ-SWOJ-ACCESS-KEY") {
+    if (WEB3FORMS_ACCESS_KEY === "5f29bd5f-cab6-427d-9730-431182740d94") {
       showError("Formularz nie jest jeszcze skonfigurowany — zobacz instrukcję na górze pliku connect.js.");
       return;
     }
