@@ -13,21 +13,25 @@
    wtedy zgłoszenia (także kolejne) zaczną naprawdę docierać.
    To jednorazowe, zajmuje kilka sekund.
 
-   Limity: FormSubmit jest darmowy i bez ustalonego "planu", ale
-   pamiętaj, że skrzynki pocztowe (Gmail itp.) zwykle odrzucają
-   e-maile powyżej ok. 20-25 MB łącznie ze wszystkimi załącznikami
-   — dlatego poniżej pilnujemy rozsądnego limitu wielkości.
+   WAŻNE — limit wielkości załączników:
+   FormSubmit przyjmuje maks. 10 MB załączników ŁĄCZNIE na jedno
+   zgłoszenie. Jeśli ten limit zostanie przekroczony, FormSubmit
+   i tak wysyła e-mail, ale BEZ zdjęć (bez błędu!). Dlatego każde
+   zdjęcie jest automatycznie kompresowane w przeglądarce przed
+   wysyłką (zmniejszony rozmiar/jakość), żeby całość bezpiecznie
+   zmieściła się w limicie nawet przy 10 zdjęciach z telefonu.
    ============================================================ */
 
 const TARGET_EMAIL = "kruszwicasercekujaw@gmail.com";
-const MAX_FILES = 5;
-const MAX_FILE_SIZE_MB = 4;
-const MAX_TOTAL_SIZE_MB = 15;
+const MAX_FILES = 10;
+const MAX_ORIGINAL_FILE_SIZE_MB = 25;   // limit na oryginalny plik przed kompresją
+const SAFE_TOTAL_ATTACHMENT_MB = 9;     // margines bezpieczeństwa poniżej limitu 10 MB FormSubmit
+const COMPRESS_MAX_DIMENSION = 1600;    // px, dłuższy bok zdjęcia po kompresji
+const COMPRESS_TARGET_KB = 700;         // docelowy rozmiar pojedynczego zdjęcia po kompresji
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("year").textContent = new Date().getFullYear();
 
-  // Menu mobilne (identyczne jak na stronie głównej)
   const navToggle = document.getElementById("navToggle");
   const navLinks = document.getElementById("navLinks");
   if (navToggle && navLinks) {
@@ -39,6 +43,63 @@ document.addEventListener("DOMContentLoaded", () => {
 
   setupPhotoForm();
 });
+
+/* Kompresuje jeden plik obrazu do Blob (JPEG), zmniejszając wymiary
+   i jakość, aż zmieści się w docelowym rozmiarze (albo po 4 próbach
+   zwraca najlepszy uzyskany wynik). */
+function compressImage(file, maxDimension, targetKB) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > height && width > maxDimension) {
+        height = Math.round(height * (maxDimension / width));
+        width = maxDimension;
+      } else if (height >= width && height > maxDimension) {
+        width = Math.round(width * (maxDimension / height));
+        height = maxDimension;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const qualities = [0.8, 0.6, 0.45, 0.3];
+      let attempt = 0;
+
+      function tryQuality() {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            URL.revokeObjectURL(url);
+            reject(new Error("Nie udało się przetworzyć zdjęcia."));
+            return;
+          }
+          const sizeKB = blob.size / 1024;
+          if (sizeKB <= targetKB || attempt >= qualities.length - 1) {
+            URL.revokeObjectURL(url);
+            resolve(blob);
+          } else {
+            attempt++;
+            tryQuality();
+          }
+        }, "image/jpeg", qualities[attempt]);
+      }
+
+      tryQuality();
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Nie udało się wczytać zdjęcia."));
+    };
+
+    img.src = url;
+  });
+}
 
 function setupPhotoForm() {
   const form = document.getElementById("photoForm");
@@ -96,21 +157,31 @@ function setupPhotoForm() {
       showError(`Możesz wysłać maksymalnie ${MAX_FILES} zdjęć naraz.`);
       return;
     }
-    const tooBig = selectedFiles.find(f => f.size > MAX_FILE_SIZE_MB * 1024 * 1024);
+    const tooBig = selectedFiles.find(f => f.size > MAX_ORIGINAL_FILE_SIZE_MB * 1024 * 1024);
     if (tooBig) {
-      showError(`Plik "${tooBig.name}" jest za duży (max ${MAX_FILE_SIZE_MB} MB na zdjęcie).`);
-      return;
-    }
-    const totalSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
-    if (totalSize > MAX_TOTAL_SIZE_MB * 1024 * 1024) {
-      showError(`Łączny rozmiar zdjęć jest za duży (max ${MAX_TOTAL_SIZE_MB} MB na zgłoszenie). Wyślij mniej zdjęć naraz.`);
+      showError(`Plik "${tooBig.name}" jest za duży (max ${MAX_ORIGINAL_FILE_SIZE_MB} MB).`);
       return;
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = "Wysyłanie...";
+    submitBtn.textContent = "Przygotowywanie zdjęć...";
 
     try {
+      // Kompresja wszystkich zdjęć równolegle
+      const compressed = await Promise.all(
+        selectedFiles.map(file => compressImage(file, COMPRESS_MAX_DIMENSION, COMPRESS_TARGET_KB))
+      );
+
+      const totalSize = compressed.reduce((sum, blob) => sum + blob.size, 0);
+      if (totalSize > SAFE_TOTAL_ATTACHMENT_MB * 1024 * 1024) {
+        showError(`Nawet po kompresji zdjęcia są za duże łącznie. Spróbuj wysłać mniej zdjęć naraz (np. w dwóch turach).`);
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Wyślij";
+        return;
+      }
+
+      submitBtn.textContent = "Wysyłanie...";
+
       const formData = new FormData();
       formData.append("_subject", `Nowe zdjęcie od: ${authorName} — Serce Kujaw`);
       formData.append("_template", "table");
@@ -123,10 +194,9 @@ function setupPhotoForm() {
       const message = document.getElementById("photoMessage").value.trim();
       if (message) formData.append("Opis", message);
 
-      // Każde zdjęcie pod osobną, unikalną nazwą pola - tak
-      // FormSubmit dołącza wiele plików naraz jako załączniki.
-      selectedFiles.forEach((file, i) => {
-        formData.append(`Zdjecie_${i + 1}`, file);
+      compressed.forEach((blob, i) => {
+        const originalName = selectedFiles[i].name.replace(/\.[^.]+$/, "") || `zdjecie_${i + 1}`;
+        formData.append(`Zdjecie_${i + 1}`, blob, `${originalName}.jpg`);
       });
 
       const response = await fetch(`https://formsubmit.co/ajax/${TARGET_EMAIL}`, {
