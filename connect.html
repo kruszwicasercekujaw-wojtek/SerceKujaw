@@ -50,21 +50,29 @@
   </section>
 
   <section class="connect-form-section">
-    <form id="photoForm" class="photo-form" novalidate>
+    <form id="photoForm" class="photo-form" novalidate
+          method="POST"
+          action="https://formsubmit.co/kruszwicasercekujaw@gmail.com"
+          enctype="multipart/form-data">
+
+      <input type="hidden" name="_subject" value="Nowe zdjęcie — Serce Kujaw">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_next" id="nextRedirect" value="">
 
       <div class="form-group">
         <label for="authorName">Autor zdjęcia *</label>
-        <input type="text" id="authorName" name="authorName" placeholder="Imię, nazwisko lub nick" required>
+        <input type="text" id="authorName" name="Autor zdjęcia" placeholder="Imię, nazwisko lub nick" required>
       </div>
 
       <div class="form-group">
         <label for="authorEmail">Twój e-mail (opcjonalnie, na wypadek pytań)</label>
-        <input type="email" id="authorEmail" name="authorEmail" placeholder="twoj@email.pl">
+        <input type="email" id="authorEmail" name="E-mail autora" placeholder="twoj@email.pl">
       </div>
 
       <div class="form-group">
         <label for="photoMessage">Krótki opis / gdzie i kiedy zrobione (opcjonalnie)</label>
-        <textarea id="photoMessage" name="photoMessage" rows="3" placeholder="Np. Gopło, zachód słońca, lipiec 2026"></textarea>
+        <textarea id="photoMessage" name="Opis" rows="3" placeholder="Np. Gopło, zachód słońca, lipiec 2026"></textarea>
       </div>
 
       <div class="form-group">
@@ -74,7 +82,7 @@
           <span class="file-drop-icon" aria-hidden="true">＋</span>
           <span class="file-drop-text">Kliknij, aby wybrać zdjęcia</span>
         </label>
-        <input type="file" id="photoFiles" name="photoFiles" accept="image/*" multiple required>
+        <input type="file" id="photoFiles" name="attachment" accept="image/*" multiple required>
 
         <div class="file-preview-grid" id="filePreviewGrid"></div>
       </div>
@@ -89,7 +97,7 @@
       </p>
     </form>
 
-    <!-- Widok po wysłaniu -->
+    <!-- Widok po wysłaniu (pokazywany po powrocie z przekierowania _next) -->
     <div class="form-success" id="formSuccess" hidden>
       <div class="success-icon" aria-hidden="true">✓</div>
       <h2>Wysłano!</h2>
@@ -98,6 +106,7 @@
       <a href="connect.html" class="btn-primary">Wyślij kolejne zdjęcie</a>
     </div>
   </section>
+
 
 </main>
 

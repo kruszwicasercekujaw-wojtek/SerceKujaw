@@ -1,28 +1,30 @@
 /* ============================================================
    CONNECT — wysyłka zdjęć na e-mail
    ------------------------------------------------------------
-   Ta strona wysyła zgłoszenia (razem ze zdjęciami) przez darmową
-   usługę FormSubmit.co — bez rejestracji, bez klucza API i bez
-   płacenia. Wystarczy że w stałej TARGET_EMAIL poniżej jest Twój
-   adres e-mail (już jest ustawiony).
+   Formularz wysyła się PRAWDZIWYM zgłoszeniem przeglądarki
+   (nie przez fetch/AJAX) prosto do FormSubmit.co — dokładnie
+   tak, jak to opisuje ich dokumentacja. To gwarantuje poprawną
+   obsługę załączników (AJAX bywał zawodny dla plików).
+
+   Zdjęcia są najpierw kompresowane w przeglądarce (mniejsze
+   wymiary + jakość), a dopiero skompresowane pliki trafiają
+   do prawdziwego pola <input type="file"> i są wysyłane.
+
+   Po wysłaniu FormSubmit przekierowuje z powrotem na tę samą
+   podstronę (parametr _next), gdzie pokazujemy komunikat
+   "Wysłano!".
 
    WAŻNE — jednorazowa aktywacja:
    Przy PIERWSZYM zgłoszeniu z tej strony FormSubmit wyśle na
-   kruszwicasercekujaw@gmail.com e-mail z linkiem aktywacyjnym
-   ("Please confirm your email"). Trzeba go kliknąć — dopiero
-   wtedy zgłoszenia (także kolejne) zaczną naprawdę docierać.
-   To jednorazowe, zajmuje kilka sekund.
+   kruszwicasercekujaw@gmail.com e-mail z linkiem aktywacyjnym.
+   Trzeba go kliknąć — dopiero wtedy zgłoszenia (także kolejne)
+   zaczną naprawdę docierać.
 
    WAŻNE — limit wielkości załączników:
-   FormSubmit przyjmuje maks. 10 MB załączników ŁĄCZNIE na jedno
-   zgłoszenie. Jeśli ten limit zostanie przekroczony, FormSubmit
-   i tak wysyła e-mail, ale BEZ zdjęć (bez błędu!). Dlatego każde
-   zdjęcie jest automatycznie kompresowane w przeglądarce przed
-   wysyłką (zmniejszony rozmiar/jakość), żeby całość bezpiecznie
-   zmieściła się w limicie nawet przy 10 zdjęciach z telefonu.
+   FormSubmit przyjmuje maks. 10 MB załączników łącznie na jedno
+   zgłoszenie — dlatego zdjęcia są kompresowane automatycznie.
    ============================================================ */
 
-const TARGET_EMAIL = "kruszwicasercekujaw@gmail.com";
 const MAX_FILES = 10;
 const MAX_ORIGINAL_FILE_SIZE_MB = 25;   // limit na oryginalny plik przed kompresją
 const SAFE_TOTAL_ATTACHMENT_MB = 9;     // margines bezpieczeństwa poniżej limitu 10 MB FormSubmit
@@ -32,6 +34,7 @@ const COMPRESS_TARGET_KB = 700;         // docelowy rozmiar pojedynczego zdjęci
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("year").textContent = new Date().getFullYear();
 
+  // Menu mobilne (identyczne jak na stronie głównej)
   const navToggle = document.getElementById("navToggle");
   const navLinks = document.getElementById("navLinks");
   if (navToggle && navLinks) {
@@ -41,12 +44,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Ustaw adres powrotny (_next) na tę samą stronę z ?sent=1
+  const nextField = document.getElementById("nextRedirect");
+  if (nextField) {
+    nextField.value = window.location.origin + window.location.pathname + "?sent=1";
+  }
+
+  // Jeśli wróciliśmy tu po wysłaniu (przekierowanie z FormSubmit) - pokaż sukces
+  if (new URLSearchParams(window.location.search).get("sent") === "1") {
+    const form = document.getElementById("photoForm");
+    const successBox = document.getElementById("formSuccess");
+    if (form) form.hidden = true;
+    if (successBox) successBox.hidden = false;
+  }
+
   setupPhotoForm();
 });
 
-/* Kompresuje jeden plik obrazu do Blob (JPEG), zmniejszając wymiary
-   i jakość, aż zmieści się w docelowym rozmiarze (albo po 4 próbach
-   zwraca najlepszy uzyskany wynik). */
+/* Kompresuje jeden plik obrazu do File (JPEG), zmniejszając wymiary
+   i jakość, aż zmieści się w docelowym rozmiarze (albo po kilku
+   próbach zwraca najlepszy uzyskany wynik). */
 function compressImage(file, maxDimension, targetKB) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -81,7 +98,8 @@ function compressImage(file, maxDimension, targetKB) {
           const sizeKB = blob.size / 1024;
           if (sizeKB <= targetKB || attempt >= qualities.length - 1) {
             URL.revokeObjectURL(url);
-            resolve(blob);
+            const baseName = file.name.replace(/\.[^.]+$/, "") || "zdjecie";
+            resolve(new File([blob], `${baseName}.jpg`, { type: "image/jpeg" }));
           } else {
             attempt++;
             tryQuality();
@@ -107,7 +125,6 @@ function setupPhotoForm() {
   const previewGrid = document.getElementById("filePreviewGrid");
   const errorBox = document.getElementById("formError");
   const submitBtn = document.getElementById("submitBtn");
-  const successBox = document.getElementById("formSuccess");
 
   if (!form) return;
 
@@ -139,7 +156,15 @@ function setupPhotoForm() {
     errorBox.textContent = "";
   }
 
+  function resetButton() {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Wyślij";
+  }
+
   form.addEventListener("submit", async (e) => {
+    // Zatrzymujemy tylko na czas walidacji + kompresji.
+    // Realne wysłanie (form.submit()) nastąpi na końcu, jako
+    // prawdziwa nawigacja przeglądarki do FormSubmit.
     e.preventDefault();
     clearError();
 
@@ -167,58 +192,30 @@ function setupPhotoForm() {
     submitBtn.textContent = "Przygotowywanie zdjęć...";
 
     try {
-      // Kompresja wszystkich zdjęć równolegle
-      const compressed = await Promise.all(
+      const compressedFiles = await Promise.all(
         selectedFiles.map(file => compressImage(file, COMPRESS_MAX_DIMENSION, COMPRESS_TARGET_KB))
       );
 
-      const totalSize = compressed.reduce((sum, blob) => sum + blob.size, 0);
+      const totalSize = compressedFiles.reduce((sum, f) => sum + f.size, 0);
       if (totalSize > SAFE_TOTAL_ATTACHMENT_MB * 1024 * 1024) {
-        showError(`Nawet po kompresji zdjęcia są za duże łącznie. Spróbuj wysłać mniej zdjęć naraz (np. w dwóch turach).`);
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Wyślij";
+        showError("Nawet po kompresji zdjęcia są za duże łącznie. Spróbuj wysłać mniej zdjęć naraz (np. w dwóch turach).");
+        resetButton();
         return;
       }
 
+      // Podmieniamy prawdziwe pole pliku na skompresowane wersje
+      const dataTransfer = new DataTransfer();
+      compressedFiles.forEach(f => dataTransfer.items.add(f));
+      fileInput.files = dataTransfer.files;
+
       submitBtn.textContent = "Wysyłanie...";
 
-      const formData = new FormData();
-      formData.append("_subject", `Nowe zdjęcie od: ${authorName} — Serce Kujaw`);
-      formData.append("_template", "table");
-      formData.append("_captcha", "false");
-      formData.append("Autor zdjęcia", authorName);
-
-      const authorEmail = document.getElementById("authorEmail").value.trim();
-      if (authorEmail) formData.append("E-mail autora", authorEmail);
-
-      const message = document.getElementById("photoMessage").value.trim();
-      if (message) formData.append("Opis", message);
-
-      compressed.forEach((blob, i) => {
-        const originalName = selectedFiles[i].name.replace(/\.[^.]+$/, "") || `zdjecie_${i + 1}`;
-        formData.append(`Zdjecie_${i + 1}`, blob, `${originalName}.jpg`);
-      });
-
-      const response = await fetch(`https://formsubmit.co/ajax/${TARGET_EMAIL}`, {
-        method: "POST",
-        headers: { "Accept": "application/json" },
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result && (result.success === "true" || result.success === true || !("success" in result))) {
-        form.hidden = true;
-        successBox.hidden = false;
-        successBox.scrollIntoView({ behavior: "smooth", block: "start" });
-      } else {
-        showError("Coś poszło nie tak podczas wysyłki. Spróbuj ponownie za chwilę.");
-      }
+      // Prawdziwe wysłanie formularza (nawigacja przeglądarki,
+      // dokładnie tak jak w dokumentacji FormSubmit)
+      form.submit();
     } catch (err) {
-      showError(`Nie udało się wysłać. Sprawdź połączenie i spróbuj ponownie, albo napisz bezpośrednio na ${TARGET_EMAIL}.`);
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Wyślij";
+      showError("Nie udało się przygotować zdjęć do wysyłki. Spróbuj ponownie.");
+      resetButton();
     }
   });
 }
