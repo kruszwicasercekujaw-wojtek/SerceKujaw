@@ -47,29 +47,23 @@ Na stronie głównej w menu jest czerwony przycisk **CONNECT**, który prowadzi
 do `connect.html` — formularza, przez który każdy może wysłać Ci zdjęcie
 (razem z podpisem autora) prosto na e-mail `kruszwicasercekujaw@gmail.com`.
 
-Strona jest statyczna, więc do faktycznej wysyłki e-maila (z załącznikami)
-używa darmowej usługi **Web3Forms** — to najprostszy sposób, żeby to
-zadziałało bez własnego serwera.
+Strona jest statyczna, więc do faktycznej wysyłki e-maila z załącznikami
+używa darmowej usługi **FormSubmit.co** — nie wymaga zakładania konta ani
+klucza API, więc nie musisz nic konfigurować w kodzie.
 
-**Jednorazowa konfiguracja (2 minuty):**
-1. Wejdź na [web3forms.com](https://web3forms.com).
-2. Podaj adres `kruszwicasercekujaw@gmail.com` — dostaniesz e-mail z
-   "Access Key" (ciąg znaków typu `a1b2c3d4-...`).
-3. Otwórz plik `connect.js` i zamień linijkę:
-   ```js
-   const WEB3FORMS_ACCESS_KEY = "WSTAW-TUTAJ-SWOJ-ACCESS-KEY";
-   ```
-   wklejając w cudzysłów swój klucz.
-4. Zapisz, wgraj (`git push` lub przeciągnij folder na Vercel ponownie) —
-   gotowe. Zgłoszenia ze zdjęciami będą przychodzić na Twoją skrzynkę.
+**Jedyna rzecz, którą trzeba zrobić — jednorazowa aktywacja:**
+Przy pierwszym zgłoszeniu z formularza FormSubmit wyśle na
+`kruszwicasercekujaw@gmail.com` e-mail z linkiem aktywacyjnym
+("Please confirm your email" / "Aktywuj formularz"). Trzeba go kliknąć —
+dopiero od tego momentu zgłoszenia (także kolejne) będą naprawdę docierać
+na skrzynkę. Zajmuje to kilka sekund i robi się tylko raz.
 
-Darmowy plan Web3Forms pozwala na ok. 250 wiadomości miesięcznie i pliki
-do ok. 5 MB każdy — w formularzu ustawiony jest limit 5 zdjęć na raz,
-też po 5 MB. To można później zwiększyć/zmniejszyć w pliku `connect.js`
-(stałe `MAX_FILES` i `MAX_FILE_SIZE_MB`).
-
-Dopóki nie wkleisz klucza, formularz pokaże widzowi komunikat, że
-wysyłka nie jest jeszcze skonfigurowana — nic się nie wyślie "donikąd".
+Limity w formularzu (można zmienić w pliku `connect.js`, stałe `MAX_FILES`,
+`MAX_FILE_SIZE_MB`, `MAX_TOTAL_SIZE_MB`):
+- do 5 zdjęć na zgłoszenie,
+- max 4 MB na jedno zdjęcie,
+- max 15 MB łącznie na zgłoszenie (większe e-maile bywają odrzucane przez
+  skrzynki pocztowe typu Gmail).
 
 ## Struktura plików
 
@@ -78,7 +72,7 @@ index.html      — strona główna
 connect.html     — podstrona CONNECT (formularz wysyłki zdjęć)
 style.css       — wygląd (czarne tło, złoty/czerwony akcent, wieża jako motyw)
 script.js       — lista filmów i linków kontaktowych (tylko strona główna) — TU edytujesz treść
-connect.js      — obsługa formularza CONNECT + klucz Web3Forms
+connect.js      — obsługa formularza CONNECT (wysyłka przez FormSubmit.co)
 assets/logo.png — Twoje logo fanpage'a
 vercel.json     — konfiguracja Vercel (czyste URL-e)
 ```

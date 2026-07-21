@@ -1,28 +1,28 @@
 /* ============================================================
    CONNECT — wysyłka zdjęć na e-mail
    ------------------------------------------------------------
-   Ta strona wysyła zgłoszenia przez darmową usługę Web3Forms
-   (https://web3forms.com). Usługa odbiera dane z formularza
-   (razem ze zdjęciami) i przesyła je e-mailem na adres, który
-   skonfigurujesz przy zakładaniu darmowego konta.
+   Ta strona wysyła zgłoszenia (razem ze zdjęciami) przez darmową
+   usługę FormSubmit.co — bez rejestracji, bez klucza API i bez
+   płacenia. Wystarczy że w stałej TARGET_EMAIL poniżej jest Twój
+   adres e-mail (już jest ustawiony).
 
-   JAK TO PODPIĄĆ (jednorazowo, 2 minuty):
-   1. Wejdź na https://web3forms.com
-   2. Podaj adres kruszwicasercekujaw@gmail.com — dostaniesz
-      w mailu "Access Key" (ciąg znaków typu
-      a1b2c3d4-e5f6-... ).
-   3. Wklej ten klucz poniżej, zamiast napisu
-      "WSTAW-TUTAJ-SWOJ-ACCESS-KEY".
-   4. Gotowe — zgłoszenia będą trafiać na Twoją skrzynkę.
+   WAŻNE — jednorazowa aktywacja:
+   Przy PIERWSZYM zgłoszeniu z tej strony FormSubmit wyśle na
+   kruszwicasercekujaw@gmail.com e-mail z linkiem aktywacyjnym
+   ("Please confirm your email"). Trzeba go kliknąć — dopiero
+   wtedy zgłoszenia (także kolejne) zaczną naprawdę docierać.
+   To jednorazowe, zajmuje kilka sekund.
 
-   Limity darmowego planu Web3Forms: 250 wiadomości/mies.,
-   pliki do ok. 5 MB każdy. To więcej niż wystarczy na start.
+   Limity: FormSubmit jest darmowy i bez ustalonego "planu", ale
+   pamiętaj, że skrzynki pocztowe (Gmail itp.) zwykle odrzucają
+   e-maile powyżej ok. 20-25 MB łącznie ze wszystkimi załącznikami
+   — dlatego poniżej pilnujemy rozsądnego limitu wielkości.
    ============================================================ */
 
-const WEB3FORMS_ACCESS_KEY = "5f29bd5f-cab6-427d-9730-431182740d94";
 const TARGET_EMAIL = "kruszwicasercekujaw@gmail.com";
 const MAX_FILES = 5;
-const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_MB = 4;
+const MAX_TOTAL_SIZE_MB = 15;
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("year").textContent = new Date().getFullYear();
@@ -98,11 +98,12 @@ function setupPhotoForm() {
     }
     const tooBig = selectedFiles.find(f => f.size > MAX_FILE_SIZE_MB * 1024 * 1024);
     if (tooBig) {
-      showError(`Plik "${tooBig.name}" jest za duży (max ${MAX_FILE_SIZE_MB} MB).`);
+      showError(`Plik "${tooBig.name}" jest za duży (max ${MAX_FILE_SIZE_MB} MB na zdjęcie).`);
       return;
     }
-    if (WEB3FORMS_ACCESS_KEY === "WSTAW-TUTAJ-SWOJ-ACCESS-KEY") {
-      showError("Formularz nie jest jeszcze skonfigurowany — zobacz instrukcję na górze pliku connect.js.");
+    const totalSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+    if (totalSize > MAX_TOTAL_SIZE_MB * 1024 * 1024) {
+      showError(`Łączny rozmiar zdjęć jest za duży (max ${MAX_TOTAL_SIZE_MB} MB na zgłoszenie). Wyślij mniej zdjęć naraz.`);
       return;
     }
 
@@ -111,9 +112,9 @@ function setupPhotoForm() {
 
     try {
       const formData = new FormData();
-      formData.append("access_key", WEB3FORMS_ACCESS_KEY);
-      formData.append("subject", `Nowe zdjęcie od: ${authorName} — Serce Kujaw`);
-      formData.append("from_name", "Serce Kujaw — formularz CONNECT");
+      formData.append("_subject", `Nowe zdjęcie od: ${authorName} — Serce Kujaw`);
+      formData.append("_template", "table");
+      formData.append("_captcha", "false");
       formData.append("Autor zdjęcia", authorName);
 
       const authorEmail = document.getElementById("authorEmail").value.trim();
@@ -122,18 +123,21 @@ function setupPhotoForm() {
       const message = document.getElementById("photoMessage").value.trim();
       if (message) formData.append("Opis", message);
 
-      selectedFiles.forEach((file) => {
-        formData.append("attachment", file);
+      // Każde zdjęcie pod osobną, unikalną nazwą pola - tak
+      // FormSubmit dołącza wiele plików naraz jako załączniki.
+      selectedFiles.forEach((file, i) => {
+        formData.append(`Zdjecie_${i + 1}`, file);
       });
 
-      const response = await fetch("https://api.web3forms.com/submit", {
+      const response = await fetch(`https://formsubmit.co/ajax/${TARGET_EMAIL}`, {
         method: "POST",
+        headers: { "Accept": "application/json" },
         body: formData,
       });
 
       const result = await response.json();
 
-      if (result.success) {
+      if (response.ok && result && (result.success === "true" || result.success === true || !("success" in result))) {
         form.hidden = true;
         successBox.hidden = false;
         successBox.scrollIntoView({ behavior: "smooth", block: "start" });
