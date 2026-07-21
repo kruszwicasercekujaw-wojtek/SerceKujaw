@@ -203,10 +203,31 @@ function setupPhotoForm() {
         return;
       }
 
-      // Podmieniamy prawdziwe pole pliku na skompresowane wersje
-      const dataTransfer = new DataTransfer();
-      compressedFiles.forEach(f => dataTransfer.items.add(f));
-      fileInput.files = dataTransfer.files;
+      // Podmieniamy prawdziwe pole pliku na skompresowane wersje.
+      // WAŻNE: FormSubmit wydaje się przyjmować tylko PIERWSZY plik,
+      // gdy wiele plików trafia pod tym samym polem "attachment".
+      // Dlatego każde zdjęcie dostaje własne, unikalne pole
+      // ("attachment_1", "attachment_2", ...) jako osobny, ukryty
+      // <input type="file">, a oryginalne pole widoczne w formularzu
+      // jest wyłączane, żeby nie wysłać go podwójnie.
+      fileInput.disabled = true;
+
+      // Usuń ewentualne wcześniej dodane ukryte pola (np. po ponownej wysyłce)
+      form.querySelectorAll("input[data-generated-attachment]").forEach(el => el.remove());
+
+      compressedFiles.forEach((file, i) => {
+        const hiddenInput = document.createElement("input");
+        hiddenInput.type = "file";
+        hiddenInput.name = `attachment_${i + 1}`;
+        hiddenInput.style.display = "none";
+        hiddenInput.setAttribute("data-generated-attachment", "true");
+
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        hiddenInput.files = dt.files;
+
+        form.appendChild(hiddenInput);
+      });
 
       submitBtn.textContent = "Wysyłanie...";
 
