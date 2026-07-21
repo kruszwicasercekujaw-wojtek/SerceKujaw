@@ -19,7 +19,7 @@
    pliki do ok. 5 MB każdy. To więcej niż wystarczy na start.
    ============================================================ */
 
-const WEB3FORMS_ACCESS_KEY = "WSTAW-TUTAJ-SWOJ-ACCESS-KEY";
+const WEB3FORMS_ACCESS_KEY = "5f29bd5f-cab6-427d-9730-431182740d94";
 const TARGET_EMAIL = "kruszwicasercekujaw@gmail.com";
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_MB = 5;
