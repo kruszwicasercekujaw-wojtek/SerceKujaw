@@ -6,6 +6,15 @@
 <title>Connect — Wyślij zdjęcie | Serce Kujaw</title>
 <meta name="description" content="Masz ciekawe zdjęcie z Kruszwicy? Wyślij je do Serce Kujaw — może pojawi się na stronie lub w kolejnym materiale.">
 <link rel="icon" href="assets/logo.png">
+
+<!-- PWA — pozwala zainstalować tę podstronę jako apkę na telefonie -->
+<link rel="manifest" href="/connect.webmanifest">
+<meta name="theme-color" content="#0a0a09">
+<link rel="apple-touch-icon" href="/assets/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Connect">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bad+Script&family=Inter:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
@@ -137,5 +146,17 @@
 </div>
 
 <script src="connect.js"></script>
+
+<script>
+  // Rejestrujemy service worker TYLKO dla tej podstrony (scope: /connect.html),
+  // więc nie wpływa na resztę serwisu (index.html itd.).
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/sw-connect.js", { scope: "/connect.html" })
+        .catch((err) => console.warn("Rejestracja service workera nie powiodła się:", err));
+    });
+  }
+</script>
 </body>
 </html>
