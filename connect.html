@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connect — Wyślij zdjęcie | Serce Kujaw</title>
+<meta name="description" content="Masz ciekawe zdjęcie z Kruszwicy? Wyślij je do Serce Kujaw — może pojawi się na stronie lub w kolejnym materiale.">
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bad+Script&family=Inter:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a href="index.html#top" class="nav-brand">
+      <img src="assets/logo.png" alt="Serce Kujaw logo" class="nav-logo">
+    </a>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Otwórz menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <nav class="nav-links" id="navLinks">
+      <a href="index.html#filmy">Filmy</a>
+      <a href="index.html#o-mnie">O mnie</a>
+      <a href="index.html#wesprzyj-mnie" class="nav-support">WESPRZYJ MNIE</a>
+      <a href="connect.html" class="nav-connect active">CONNECT</a>
+      <a href="index.html#kontakt">Kontakt</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <section class="connect-hero" id="top">
+    <span class="section-num">Podziel się kadrem</span>
+    <h1>CONNECT</h1>
+    <p class="connect-lead">
+      Masz zdjęcie z Kruszwicy, znad Gopła albo z lokalnego wydarzenia?
+      Wyślij je do mnie — najciekawsze kadry mogą trafić na stronę
+      albo do kolejnego materiału (zawsze z podpisem autora).
+    </p>
+  </section>
+
+  <section class="connect-form-section">
+    <form id="photoForm" class="photo-form" novalidate>
+
+      <div class="form-group">
+        <label for="authorName">Autor zdjęcia *</label>
+        <input type="text" id="authorName" name="authorName" placeholder="Imię, nazwisko lub nick" required>
+      </div>
+
+      <div class="form-group">
+        <label for="authorEmail">Twój e-mail (opcjonalnie, na wypadek pytań)</label>
+        <input type="email" id="authorEmail" name="authorEmail" placeholder="twoj@email.pl">
+      </div>
+
+      <div class="form-group">
+        <label for="photoMessage">Krótki opis / gdzie i kiedy zrobione (opcjonalnie)</label>
+        <textarea id="photoMessage" name="photoMessage" rows="3" placeholder="Np. Gopło, zachód słońca, lipiec 2026"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="photoFiles">Dodaj zdjęcia * <span class="field-hint">(do 5 plików, max 5 MB każde)</span></label>
+
+        <label class="file-drop" id="fileDrop" for="photoFiles">
+          <span class="file-drop-icon" aria-hidden="true">＋</span>
+          <span class="file-drop-text">Kliknij, aby wybrać zdjęcia</span>
+        </label>
+        <input type="file" id="photoFiles" name="photoFiles" accept="image/*" multiple required>
+
+        <div class="file-preview-grid" id="filePreviewGrid"></div>
+      </div>
+
+      <p class="form-error" id="formError" hidden></p>
+
+      <button type="submit" class="btn-primary btn-send" id="submitBtn">Wyślij</button>
+
+      <p class="form-note">
+        Wysyłając zdjęcie, potwierdzasz że masz do niego prawa i zgadzasz się
+        na jego ewentualną publikację na stronie Serce Kujaw z podpisem autora.
+      </p>
+    </form>
+
+    <!-- Widok po wysłaniu -->
+    <div class="form-success" id="formSuccess" hidden>
+      <div class="success-icon" aria-hidden="true">✓</div>
+      <h2>Wysłano!</h2>
+      <p>Dziękuję za zdjęcie — dotarło już na moją skrzynkę. Jeśli trafi na stronę
+         albo do materiału, na pewno podpiszę je Twoim imieniem/nickiem.</p>
+      <a href="connect.html" class="btn-primary">Wyślij kolejne zdjęcie</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <img src="assets/logo.png" alt="Serce Kujaw" class="footer-logo">
+  <p>&copy; <span id="year"></span> Serce Kujaw — Kruszwica</p>
+</footer>
+
+<div class="bottom-ad-bar">
+  <div class="ad-content">
+    <span class="ad-label">POLECAM:</span>
+    <a href="https://www.facebook.com/wakacjepltorunstawki" target="_blank" rel="noopener noreferrer">
+      <img src="assets/wakacje.jpg" alt="Wakacje.pl Toruń Stawki" class="ad-logo">
+    </a>
+    <a href="https://kruszwica.net" target="_blank" rel="noopener noreferrer">
+      <img src="assets/kruszwicanet.jpg" alt="Kruszwica.net" class="ad-logo">
+    </a>
+    <a href="https://kruszwica.dlawas.info/" target="_blank" rel="noopener noreferrer">
+      <img src="assets/dlawas.jpg" alt="Kruszwica DlaWas.info" class="ad-logo">
+    </a>
+    <a href="https://www.facebook.com/profile.php?id=61558717479239" target="_blank" rel="noopener noreferrer">
+      <img src="assets/potencjał.jpg" alt="Odkryj Swój Potencjał" class="ad-logo">
+    </a>
+    <a href="https://www.facebook.com/profile.php?id=100065136093573" target="_blank" rel="noopener noreferrer">
+      <img src="assets/delikatesy.jpg" alt="Delikatesy" class="ad-logo">
+    </a>
+  </div>
+</div>
+
+<script src="connect.js"></script>
+</body>
+</html>
