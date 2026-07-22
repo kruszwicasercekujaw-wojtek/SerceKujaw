@@ -674,3 +674,7 @@ a:focus-visible, button:focus-visible{
   border-top: 1px solid var(--line);
   padding-top: 1rem;
 }
+.policy-back{
+  margin-top: 2rem;
+  text-align: center;
+}
