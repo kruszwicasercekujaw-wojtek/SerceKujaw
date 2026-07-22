@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polityka prywatności | CONNECT — Serce Kujaw</title>
+<meta name="description" content="Polityka prywatności aplikacji CONNECT – Kruszwica Serce Kujaw.">
+<link rel="icon" href="assets/logo.png">
+<meta name="theme-color" content="#0a0a09">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bad+Script&family=Inter:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a href="index.html#top" class="nav-brand">
+      <img src="assets/logo.png" alt="Serce Kujaw logo" class="nav-logo">
+    </a>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Otwórz menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <nav class="nav-links" id="navLinks">
+      <a href="index.html#filmy">Filmy</a>
+      <a href="index.html#o-mnie">O mnie</a>
+      <a href="index.html#wesprzyj-mnie" class="nav-support">WESPRZYJ MNIE</a>
+      <a href="connect.html" class="nav-connect">CONNECT</a>
+      <a href="index.html#kontakt">Kontakt</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <section class="connect-hero" id="top">
+    <span class="section-num">Prywatność</span>
+    <h1>Polityka prywatności</h1>
+    <p class="connect-lead">Aplikacja CONNECT – Kruszwica Serce Kujaw</p>
+  </section>
+
+  <section class="policy-section">
+
+    <h2>1. Administrator danych</h2>
+    <p>
+      Administratorem danych przesyłanych za pośrednictwem aplikacji CONNECT jest
+      właściciel serwisu „Kruszwica Serce Kujaw”, kontakt:
+      <a href="mailto:kruszwicasercekujaw@gmail.com">kruszwicasercekujaw@gmail.com</a>.
+    </p>
+
+    <h2>2. Jakie dane są zbierane?</h2>
+    <p>Za pośrednictwem formularza użytkownik może dobrowolnie przesłać:</p>
+    <ul>
+      <li>imię, nazwisko lub pseudonim autora;</li>
+      <li>adres e-mail (opcjonalnie);</li>
+      <li>opis zdjęcia;</li>
+      <li>zdjęcia i materiały graficzne.</li>
+    </ul>
+
+    <h2>3. Cel przetwarzania danych</h2>
+    <p>Przesłane dane są wykorzystywane wyłącznie w celu:</p>
+    <ul>
+      <li>kontaktu z autorem zdjęcia;</li>
+      <li>publikacji materiałów na profilu „Kruszwica Serce Kujaw” lub w materiałach promocyjnych;</li>
+      <li>identyfikacji autora przesłanego zdjęcia;</li>
+      <li>prowadzenia działalności informacyjnej związanej z regionem Kruszwicy i Kujaw.</li>
+    </ul>
+
+    <h2>4. Przesyłanie zdjęć</h2>
+    <p>
+      Zdjęcia przesyłane za pomocą aplikacji CONNECT trafiają na skrzynkę pocztową
+      administratora. Wysyłając zdjęcia, użytkownik oświadcza, że posiada prawa do
+      ich publikacji oraz wyraża zgodę na ich ewentualne wykorzystanie z podaniem autora.
+    </p>
+
+    <h2>5. Bezpieczeństwo danych</h2>
+    <p>
+      Dane przesyłane są za pośrednictwem szyfrowanego połączenia internetowego.
+      Administrator dokłada wszelkich starań, aby zabezpieczyć przesłane materiały
+      przed dostępem osób nieuprawnionych.
+    </p>
+
+    <h2>6. Udostępnianie danych</h2>
+    <p>
+      Dane użytkowników nie są sprzedawane ani przekazywane osobom trzecim, z wyjątkiem
+      sytuacji wymaganych przez obowiązujące przepisy prawa.
+    </p>
+
+    <h2>7. Usunięcie danych</h2>
+    <p>
+      Każdy użytkownik ma prawo zażądać usunięcia przesłanych danych i zdjęć.
+      W tym celu należy skontaktować się pod adresem:
+      <a href="mailto:kruszwicasercekujaw@gmail.com">kruszwicasercekujaw@gmail.com</a>.
+    </p>
+
+    <h2>8. Zmiany polityki prywatności</h2>
+    <p>
+      Administrator zastrzega sobie prawo do wprowadzania zmian w niniejszej polityce
+      prywatności. Aktualna wersja dokumentu będzie zawsze dostępna w aplikacji CONNECT.
+    </p>
+
+    <p class="policy-updated">Ostatnia aktualizacja: lipiec 2026.</p>
+
+  </section>
+
+</main>
+
+<footer class="footer">
+  <img src="assets/logo.png" alt="Serce Kujaw" class="footer-logo">
+  <p>&copy; <span id="year"></span> Serce Kujaw — Kruszwica</p>
+</footer>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  const navToggle = document.getElementById("navToggle");
+  const navLinks = document.getElementById("navLinks");
+  if (navToggle && navLinks) {
+    navToggle.addEventListener("click", () => navLinks.classList.toggle("active"));
+    navLinks.querySelectorAll("a").forEach(link => {
+      link.addEventListener("click", () => navLinks.classList.remove("active"));
+    });
+  }
+</script>
+</body>
+</html>
