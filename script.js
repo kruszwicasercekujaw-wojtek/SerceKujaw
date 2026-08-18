@@ -7,6 +7,12 @@
    - date: np. "Lipiec 2026" (opcjonalne, może być puste "")
    ============================================================ */
 const VIDEOS = [
+    {
+    title: "Polowanie Na Myszy” Pierwsza zapowiedź",
+    url: "https://www.facebook.com/reel/1385036549649669",
+    description: "🔥 POLOWANIE NA MYSZY NADCHODZI! 🐭",
+    date: "Maj 2026"
+  },
   {
     title: "GOPLANA 2026 - Kruszwica",
     url: "https://www.youtube.com/watch?v=wr0AVF9Cnzo",
