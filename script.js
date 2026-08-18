@@ -11,31 +11,36 @@ const VIDEOS = [
     title: "Polowanie Na Myszy” Pierwsza zapowiedź",
     url: "https://www.facebook.com/reel/1385036549649669",
     description: "🔥 POLOWANIE NA MYSZY NADCHODZI! 🐭",
-    date: "Maj 2026"
+    date: "sierpień 2026"
+       orientation: "portrait" 
   },
   {
     title: "GOPLANA 2026 - Kruszwica",
     url: "https://www.youtube.com/watch?v=wr0AVF9Cnzo",
     description: "🎥 Goplana 2026 już za nami, ale wspomnienia wciąż pozostają żywe. ✨",
     date: "Lipiec 2026"
+     orientation: "landscape"
   },
   {
     title: "Zapowiedź Festynu Dla Nadii",
     url: "https://www.tiktok.com/@.younior/video/7654885805390892321",
     description: "❤️ 𝗗𝗟𝗔 NADII. 𝗗𝗟𝗔 NADZIEI. 𝗗𝗟𝗔 PRZYSZŁOŚCI. ❤️",
     date: "Czerwiec 2026"
+     orientation: "landscape"
   },
   {
     title: "Średniowieczna „Agnes” zwodowana na Gople",
     url: "https://www.youtube.com/watch?v=Wn0EIC-MuXc",
     description: "Kruszwica z innej strony! Zabieram Was w wyjątkową podróż w czasie.",
     date: "Maj 2026"
+     orientation: "landscape"
   },
   {
     title: "Kujawskie Nowalijki 2026",
     url: "https://www.facebook.com/reel/3074858836040893",
     description: "🌿 Smaki, tradycja, muzyka i wyjątkowa atmosfera.",
     date: "Czerwiec 2026"
+     orientation: "landscape"
   }
 ];
 
