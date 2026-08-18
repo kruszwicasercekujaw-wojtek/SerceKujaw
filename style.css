@@ -678,3 +678,44 @@ a:focus-visible, button:focus-visible{
   margin-top: 2rem;
   text-align: center;
 }
+
+/* ============================================================
+   ORIENTACJA WIDEO W MODALU (portrait / landscape)
+   Nadpisuje .video-responsive dla filmów pionowych (Reels, TikTok)
+   ============================================================ */
+
+/* Domyślnie / poziomy film (YouTube) - zachowuje 16:9 jak dotychczas */
+.video-modal-content.landscape .video-responsive {
+  padding-bottom: 56.25%;
+  height: 0;
+  width: 100%;
+  max-width: none;
+}
+
+/* Pionowy film / Facebook Reel / TikTok - 9:16 */
+.video-modal-content.portrait .video-responsive {
+  padding-bottom: 0;
+  height: min(80vh, 780px);
+  width: auto;
+  aspect-ratio: 9 / 16;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Modal jako całość - węższy dla pionowych filmów, żeby nie było
+   pustej przestrzeni po bokach */
+.video-modal-content.portrait {
+  max-width: 420px;
+}
+
+/* Na telefonie: pionowy film ma zająć możliwie dużo wysokości ekranu */
+@media (max-width: 768px) {
+  .video-modal-content.portrait .video-responsive {
+    height: min(70vh, 640px);
+  }
+  .video-modal-content.portrait {
+    max-width: 100%;
+    padding: 16px;
+  }
+}
