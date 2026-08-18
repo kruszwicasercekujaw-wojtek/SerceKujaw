@@ -108,8 +108,8 @@ function setupModal() {
     <div class="video-modal" id="videoModal" aria-hidden="true">
       <div class="video-modal-overlay" id="modalOverlay"></div>
       <div class="video-modal-content">
-        <button class="video-modal-close" id="modalClose" aria-label="Zamknij">&times;</button>
         <div class="video-modal-body" id="modalBody"></div>
+        <button class="video-modal-close-btn" id="modalClose" aria-label="Zamknij i wróć">WRÓĆ</button>
       </div>
     </div>
   `;
