@@ -10,7 +10,7 @@
 const VIDEOS = [
   {
     title: "Polowanie Na Myszy” Pierwsza zapowiedź",
-    url: "https://www.facebook.com/reel/1385036549649669",
+    url: "https://www.youtube.com/shorts/0NnfOtL_KdA",
     description: "🔥 POLOWANIE NA MYSZY NADCHODZI! 🐭",
     date: "sierpień 2026",
     orientation: "portrait"
