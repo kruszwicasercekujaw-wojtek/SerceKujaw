@@ -5,42 +5,43 @@
    - url: pełny link (YouTube, Facebook, TikTok, Instagram...)
    - description: krótki opis
    - date: np. "Lipiec 2026" (opcjonalne, może być puste "")
+   - orientation: "portrait" (pionowy - Reels/TikTok) lub "landscape" (poziomy - domyślny)
    ============================================================ */
 const VIDEOS = [
-    {
+  {
     title: "Polowanie Na Myszy” Pierwsza zapowiedź",
     url: "https://www.facebook.com/reel/1385036549649669",
     description: "🔥 POLOWANIE NA MYSZY NADCHODZI! 🐭",
-    date: "sierpień 2026"
-       orientation: "portrait" 
+    date: "sierpień 2026",
+    orientation: "portrait"
   },
   {
     title: "GOPLANA 2026 - Kruszwica",
     url: "https://www.youtube.com/watch?v=wr0AVF9Cnzo",
     description: "🎥 Goplana 2026 już za nami, ale wspomnienia wciąż pozostają żywe. ✨",
-    date: "Lipiec 2026"
-     orientation: "landscape"
+    date: "Lipiec 2026",
+    orientation: "landscape"
   },
   {
     title: "Zapowiedź Festynu Dla Nadii",
     url: "https://www.tiktok.com/@.younior/video/7654885805390892321",
     description: "❤️ 𝗗𝗟𝗔 NADII. 𝗗𝗟𝗔 NADZIEI. 𝗗𝗟𝗔 PRZYSZŁOŚCI. ❤️",
-    date: "Czerwiec 2026"
-     orientation: "landscape"
+    date: "Czerwiec 2026",
+    orientation: "portrait"
   },
   {
     title: "Średniowieczna „Agnes” zwodowana na Gople",
     url: "https://www.youtube.com/watch?v=Wn0EIC-MuXc",
     description: "Kruszwica z innej strony! Zabieram Was w wyjątkową podróż w czasie.",
-    date: "Maj 2026"
-     orientation: "landscape"
+    date: "Maj 2026",
+    orientation: "landscape"
   },
   {
     title: "Kujawskie Nowalijki 2026",
     url: "https://www.facebook.com/reel/3074858836040893",
     description: "🌿 Smaki, tradycja, muzyka i wyjątkowa atmosfera.",
-    date: "Czerwiec 2026"
-     orientation: "landscape"
+    date: "Czerwiec 2026",
+    orientation: "portrait"
   }
 ];
 
@@ -115,6 +116,7 @@ function setupModal() {
   document.body.insertAdjacentHTML("beforeend", modalHTML);
 
   const modal = document.getElementById("videoModal");
+  const modalContent = document.querySelector(".video-modal-content");
   const modalBody = document.getElementById("modalBody");
   const overlay = document.getElementById("modalOverlay");
   const closeBtn = document.getElementById("modalClose");
@@ -125,6 +127,11 @@ function setupModal() {
 
     const ytId = getYouTubeId(video.url);
     const fbUrl = getFacebookUrl(video.url);
+
+    // Ustawiamy orientację na kontenerze modala (portrait / landscape)
+    const orientation = video.orientation === "portrait" ? "portrait" : "landscape";
+    modalContent.classList.remove("portrait", "landscape");
+    modalContent.classList.add(orientation);
 
     if (ytId) {
       // YouTube Embed
@@ -146,11 +153,15 @@ function setupModal() {
       const isReel = video.url.includes("/reel/");
       const pluginType = isReel ? "post.php" : "video.php";
 
-      // Facebook Embed
+      // Facebook Embed - dodajemy width/height dopasowane do orientacji,
+      // Facebook lepiej respektuje jawnie podane wymiary niż samo CSS
+      const fbWidth = orientation === "portrait" ? 380 : 560;
+      const fbHeight = orientation === "portrait" ? 674 : 315;
+
       modalBody.innerHTML = `
         <div class="video-responsive">
           <iframe 
-            src="https://www.facebook.com/plugins/${pluginType}?href=${fbUrl}&show_text=false&autoplay=true" 
+            src="https://www.facebook.com/plugins/${pluginType}?href=${fbUrl}&show_text=false&autoplay=true&width=${fbWidth}&height=${fbHeight}" 
             width="100%" 
             height="100%" 
             style="border:none;overflow:hidden" 
@@ -191,6 +202,7 @@ function setupModal() {
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
     modalBody.innerHTML = ""; // Czyszczenie iframe zatrzymuje dźwięk
+    modalContent.classList.remove("portrait", "landscape");
     document.body.style.overflow = "";
   }
 
