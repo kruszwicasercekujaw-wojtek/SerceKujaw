@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mysia Wieża — Łowy w Kruszwicy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --parchment:#ECE0C4;
+    --parchment-dark:#D8C79E;
+    --ink:#2A1D12;
+    --wood:#4A2E1E;
+    --wood-dark:#301C10;
+    --gold:#C9A24B;
+    --gold-bright:#E8C876;
+    --lake-deep:#0E2E33;
+    --lake:#1F4B4A;
+    --danger:#8B2E2E;
+    --danger-bright:#C24A3E;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background:var(--wood-dark);
+    font-family:'EB Garamond', serif;
+    color:var(--parchment);
+    -webkit-tap-highlight-color: transparent;
+  }
+  #stage{
+    position:relative; width:100vw; height:100vh; overflow:hidden;
+  }
+  canvas{ display:block; width:100%; height:100%; touch-action:none; cursor:none; }
+
+  /* ---------- Overlays ---------- */
+  .overlay{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; text-align:center; padding:24px;
+    background:radial-gradient(ellipse at center, rgba(14,46,51,0.35), rgba(10,10,8,0.82) 75%);
+    animation: fadeIn .5s ease;
+  }
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  .hidden{ display:none !important; }
+
+  .plaque{
+    background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
+    border:3px solid var(--wood);
+    box-shadow: 0 0 0 6px var(--wood-dark), 0 20px 50px rgba(0,0,0,0.55), inset 0 0 30px rgba(74,46,30,0.25);
+    border-radius:6px;
+    padding:36px 42px;
+    max-width:520px;
+    width:92%;
+    color:var(--ink);
+  }
+  .eyebrow{
+    font-family:'Cinzel', serif;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--danger);
+    margin:0 0 6px;
+  }
+  h1{
+    font-family:'Cinzel', serif;
+    font-size:clamp(28px, 5vw, 40px);
+    margin:0 0 10px;
+    line-height:1.15;
+    color:var(--wood);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .legend{
+    font-size:16.5px;
+    line-height:1.55;
+    font-style:italic;
+    color:#3a2a18;
+    margin: 0 0 22px;
+    border-top:1px solid rgba(74,46,30,0.3);
+    border-bottom:1px solid rgba(74,46,30,0.3);
+    padding:14px 4px;
+  }
+  label.nick-label{
+    display:block; font-family:'Cinzel',serif; font-size:12px; letter-spacing:.14em;
+    text-transform:uppercase; margin-bottom:8px; color:var(--wood);
+  }
+  #nickInput{
+    width:100%; font-family:'EB Garamond', serif; font-size:19px; text-align:center;
+    padding:11px 14px; border-radius:4px; border:2px solid var(--wood);
+    background:#fbf6e8; color:var(--ink); outline:none;
+  }
+  #nickInput:focus{ border-color:var(--danger); box-shadow:0 0 0 3px rgba(139,46,46,0.18); }
+
+  .btn{
+    font-family:'Cinzel', serif;
+    letter-spacing:.06em;
+    font-size:16px;
+    padding:13px 30px;
+    margin-top:20px;
+    border:none;
+    border-radius:4px;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+    color:#3a2408;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow: 0 4px 0 #8a6d2e, 0 8px 16px rgba(0,0,0,0.35);
+    transition: transform .08s ease, box-shadow .08s ease;
+  }
+  .btn:active{ transform:translateY(4px); box-shadow:0 0px 0 #8a6d2e, 0 3px 8px rgba(0,0,0,0.3); }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn.secondary{
+    background:linear-gradient(180deg,#5a4028,#3d2a18);
+    color:var(--parchment);
+    box-shadow: 0 4px 0 #241609, 0 8px 16px rgba(0,0,0,0.35);
+    margin-left:10px;
+  }
+
+  .hint{ font-size:13px; margin-top:16px; color:#5a4429; }
+
+  /* ---------- HUD ---------- */
+  #hud{
+    position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between;
+    align-items:flex-start; padding:14px 18px; pointer-events:none; z-index:5;
+  }
+  .hud-box{
+    background:linear-gradient(180deg, rgba(42,29,18,0.82), rgba(24,16,9,0.82));
+    border:1px solid var(--gold);
+    border-radius:6px;
+    padding:8px 14px;
+    font-family:'Cinzel', serif;
+    font-size:13px;
+    letter-spacing:.05em;
+    box-shadow:0 4px 10px rgba(0,0,0,0.4);
+  }
+  .hud-box .val{ font-size:20px; color:var(--gold-bright); display:block; margin-top:2px; }
+  #sacks{ display:flex; gap:6px; margin-top:4px; }
+  .sack{ width:16px; height:18px; border-radius:2px 2px 6px 6px; background:var(--gold); border:1px solid #6b4e1c; opacity:1; transition: opacity .3s, transform .3s; }
+  .sack.lost{ opacity:.18; transform:scale(.8) rotate(15deg); background:#555; }
+  #combo{
+    position:absolute; left:50%; top:16px; transform:translateX(-50%);
+    font-family:'Cinzel',serif; color:var(--gold-bright); font-size:15px;
+    text-shadow:0 2px 6px rgba(0,0,0,0.6);
+    opacity:0; transition:opacity .2s;
+    pointer-events:none; z-index:5;
+  }
+
+  #results{ text-align:left; }
+  #results table{ width:100%; border-collapse:collapse; margin-top:6px; font-size:15px;}
+  #results td{ padding:4px 6px; border-bottom:1px solid rgba(74,46,30,0.2); }
+  #results tr.me{ background:rgba(201,162,75,0.28); font-weight:600; }
+  #results .rank{ width:26px; color:var(--danger); font-family:'Cinzel',serif; }
+
+  @media (max-width:520px){
+    .plaque{ padding:26px 20px; }
+    h1{ font-size:24px; }
+    .legend{ font-size:15px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- HUD during gameplay -->
+  <div id="hud" class="hidden">
+    <div class="hud-box">
+      ŁUP<span class="val" id="scoreVal">0</span>
+    </div>
+    <div class="hud-box" style="text-align:center;">
+      SPICHLERZ
+      <div id="sacks"></div>
+    </div>
+    <div class="hud-box" style="text-align:right;">
+      CZAS<span class="val" id="timeVal">60</span>
+    </div>
+  </div>
+  <div id="combo"></div>
+
+  <!-- Menu -->
+  <div class="overlay" id="menuScreen">
+    <div class="plaque">
+      <p class="eyebrow">Rok Pański 965, gród nad jeziorem Gopło</p>
+      <h1>Mysia Wieża<br>Łowy w Kruszwicy</h1>
+      <p class="legend">
+        Legenda głosi, że w wieży na wyspie ukarano niegdyś okrutnego księcia Popiela —
+        zjedzony żywcem przez chmarę myszy. Odtąd co roku, gdy zapada zmierzch nad Gopłem,
+        gryzonie znów ciągną ku spichlerzom Kruszwicy. Chwyć łuk. Broń ziarna. Nie pozwól,
+        by historia się powtórzyła.
+      </p>
+      <label class="nick-label" for="nickInput">Podaj swe imię, łowco</label>
+      <input id="nickInput" type="text" maxlength="16" placeholder="np. Piast" autocomplete="off">
+      <div>
+        <button class="btn" id="startBtn">Rozpocznij łowy</button>
+      </div>
+      <p class="hint">Celuj myszą / palcem, kliknij lub dotknij, by wypuścić strzałę.</p>
+    </div>
+  </div>
+
+  <!-- Game Over -->
+  <div class="overlay hidden" id="overScreen">
+    <div class="plaque" id="results">
+      <p class="eyebrow" id="overEyebrow">Łowy dobiegły końca</p>
+      <h1 id="overTitle">Spichlerz ocalał</h1>
+      <p class="legend" id="overText"></p>
+      <table id="leaderboard"></table>
+      <div style="text-align:center;">
+        <button class="btn" id="againBtn">Zapoluj ponownie</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ Setup ============ */
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const stage = document.getElementById('stage');
+  const menuScreen = document.getElementById('menuScreen');
+  const overScreen = document.getElementById('overScreen');
+  const hud = document.getElementById('hud');
+  const nickInput = document.getElementById('nickInput');
+  const startBtn = document.getElementById('startBtn');
+  const againBtn = document.getElementById('againBtn');
+  const scoreVal = document.getElementById('scoreVal');
+  const timeVal = document.getElementById('timeVal');
+  const sacksEl = document.getElementById('sacks');
+  const comboEl = document.getElementById('combo');
+
+  let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  function resize(){
+    W = stage.clientWidth; H = stage.clientHeight;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  /* ============ Audio (synth, no assets) ============ */
+  let actx = null;
+  function ac(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+  function beep(freq, dur, type, gain, glideTo){
+    const a = ac(); if(!a) return;
+    const osc = a.createOscillator(); const g = a.createGain();
+    osc.type = type || 'sine'; osc.frequency.setValueAtTime(freq, a.currentTime);
+    if(glideTo) osc.frequency.exponentialRampToValueAtTime(glideTo, a.currentTime + dur);
+    g.gain.setValueAtTime(gain||0.15, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + dur);
+    osc.connect(g); g.connect(a.destination);
+    osc.start(); osc.stop(a.currentTime + dur);
+  }
+  const sfx = {
+    shoot: () => beep(340,0.12,'triangle',0.10,180),
+    hit:   () => beep(660,0.14,'square',0.14,900),
+    gold:  () => { beep(500,0.18,'square',0.16,1300); setTimeout(()=>beep(760,0.16,'square',0.13,1500),70); },
+    steal: () => beep(140,0.30,'sawtooth',0.16,60),
+    start: () => { beep(300,0.14,'triangle',0.12,500); },
+    over:  () => beep(220,0.5,'sine',0.14,110),
+  };
+
+  /* ============ Game state ============ */
+  const STATE = { MENU:'menu', PLAY:'play', OVER:'over' };
+  let state = STATE.MENU;
+  let nickname = 'Łowca';
+  let score = 0, timeLeft = 60, lives = 3, combo = 0, bestCombo = 0, kills = 0;
+  let elapsed = 0;
+  let spawnTimer = 0;
+  let mice = [], arrows = [], particles = [];
+  let pointer = { x: 0, y: 0, active:false };
+  let lastTs = 0;
+
+  const GROUND_Y = () => H*0.66;      // path where mice run
+  const CAPTURE_X = () => W/2;        // granary position
+  const ARCHER_X = () => W/2;
+  const ARCHER_Y = () => H*0.86;
+
+  /* ============ Helpers ============ */
+  function rand(a,b){ return a + Math.random()*(b-a); }
+  function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+  /* ============ Background scene ============ */
+  function drawBackground(){
+    // sky
+    const sky = ctx.createLinearGradient(0,0,0,H*0.66);
+    sky.addColorStop(0,'#1a2740');
+    sky.addColorStop(0.55,'#5c3d52');
+    sky.addColorStop(1,'#c97a4a');
+    ctx.fillStyle = sky; ctx.fillRect(0,0,W,H*0.68);
+
+    // sun
+    const sunX = W*0.78, sunY = H*0.30, sunR = Math.min(W,H)*0.07;
+    const sg = ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,sunR*2.2);
+    sg.addColorStop(0,'rgba(255,224,150,0.9)');
+    sg.addColorStop(1,'rgba(255,224,150,0)');
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sunX,sunY,sunR*2.2,0,7); ctx.fill();
+    ctx.fillStyle = '#ffe6a8'; ctx.beginPath(); ctx.arc(sunX,sunY,sunR,0,7); ctx.fill();
+
+    // birds
+    ctx.strokeStyle = 'rgba(20,15,25,0.5)'; ctx.lineWidth = 2;
+    [[0.18,0.14],[0.24,0.17],[0.30,0.13]].forEach(([bx,by])=>{
+      const x=W*bx, y=H*by, s=6;
+      ctx.beginPath(); ctx.moveTo(x-s,y); ctx.quadraticCurveTo(x,y-s,x+s,y); ctx.stroke();
+    });
+
+    // distant hills
+    ctx.fillStyle = '#2c3f4a';
+    ctx.beginPath(); ctx.moveTo(0,H*0.60);
+    ctx.quadraticCurveTo(W*0.2,H*0.52,W*0.42,H*0.60);
+    ctx.quadraticCurveTo(W*0.6,H*0.66,W*0.85,H*0.56);
+    ctx.lineTo(W,H*0.60); ctx.lineTo(W,H*0.66); ctx.lineTo(0,H*0.66); ctx.closePath(); ctx.fill();
+
+    // lake
+    const lake = ctx.createLinearGradient(0,H*0.62,0,H*0.86);
+    lake.addColorStop(0,'#33606a');
+    lake.addColorStop(1,'#0d2a2f');
+    ctx.fillStyle = lake; ctx.fillRect(0,H*0.62,W,H*0.24);
+
+    // lake sparkle lines
+    ctx.strokeStyle = 'rgba(255,220,170,0.18)';
+    for(let i=0;i<6;i++){
+      const y = H*0.65 + i*7 + Math.sin(elapsed*0.001+i)*1.5;
+      ctx.beginPath(); ctx.moveTo(W*0.55,y); ctx.lineTo(W*0.9,y); ctx.stroke();
+    }
+
+    // Mysia Wieża — the tower island, back-left
+    drawTower(W*0.20, H*0.615, 0.55);
+
+    // shoreline / grass foreground band where mice run and archer stands
+    const groundGrad = ctx.createLinearGradient(0,H*0.63,0,H);
+    groundGrad.addColorStop(0,'#3c5a3a');
+    groundGrad.addColorStop(0.5,'#2d4326');
+    groundGrad.addColorStop(1,'#1c2a18');
+    ctx.fillStyle = groundGrad;
+    ctx.beginPath();
+    ctx.moveTo(0,H*0.70);
+    ctx.quadraticCurveTo(W*0.5,H*0.63,W,H*0.70);
+    ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+
+    // granary (grain sacks) at capture point
+    drawGranary(CAPTURE_X(), GROUND_Y()+18);
+  }
+
+  function drawTower(x,y,scale){
+    ctx.save(); ctx.translate(x,y); ctx.scale(scale,scale);
+    // island
+    ctx.fillStyle = '#22392f';
+    ctx.beginPath(); ctx.ellipse(0,58,70,16,0,0,7); ctx.fill();
+    // tower body
+    const tg = ctx.createLinearGradient(-26,0,26,0);
+    tg.addColorStop(0,'#8b7458'); tg.addColorStop(0.5,'#c9b48c'); tg.addColorStop(1,'#7a6349');
+    ctx.fillStyle = tg;
+    ctx.fillRect(-26,-90,52,150);
+    // roof
+    ctx.fillStyle = '#6b3a2e';
+    ctx.beginPath(); ctx.moveTo(-34,-90); ctx.lineTo(0,-140); ctx.lineTo(34,-90); ctx.closePath(); ctx.fill();
+    // windows
+    ctx.fillStyle = '#241611';
+    ctx.fillRect(-6,-70,12,18);
+    ctx.fillRect(-6,-30,12,18);
+    ctx.fillRect(-6,10,12,18);
+    // battlements hint
+    ctx.fillStyle = '#7a6349';
+    for(let i=-3;i<=3;i++){ ctx.fillRect(-26+i*8.6,-96,5,10); }
+    ctx.restore();
+  }
+
+  function drawGranary(x,y){
+    ctx.save(); ctx.translate(x,y);
+    for(let i=0;i<3;i++){
+      const dead = i < (3-lives);
+      const ox = (i-1)*22, oy = -Math.abs(i-1)*4;
+      ctx.save(); ctx.translate(ox,oy);
+      ctx.fillStyle = dead ? '#4a4238' : '#b9924a';
+      ctx.strokeStyle = '#5c3f1c'; ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(-14,10); ctx.quadraticCurveTo(-16,-14,0,-20); ctx.quadraticCurveTo(16,-14,14,10);
+      ctx.quadraticCurveTo(0,18,-14,10); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = dead ? '#39332b' : '#8a6a2e';
+      ctx.beginPath(); ctx.moveTo(-6,-4); ctx.lineTo(6,-4); ctx.moveTo(-4,4); ctx.lineTo(6,4); ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  /* ============ Archer ============ */
+  function drawArcher(){
+    const ax = ARCHER_X(), ay = ARCHER_Y();
+    const ang = Math.atan2(pointer.y-ay, pointer.x-ax);
+    ctx.save();
+    ctx.translate(ax,ay);
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath(); ctx.ellipse(0,6,26,7,0,0,7); ctx.fill();
+    // legs
+    ctx.strokeStyle = '#3a2a1c'; ctx.lineWidth=7; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-6,0); ctx.lineTo(-10,-34); ctx.moveTo(6,0); ctx.lineTo(10,-34); ctx.stroke();
+    // body/tunic
+    ctx.fillStyle = '#5a3a24';
+    ctx.beginPath(); ctx.moveTo(-14,-34); ctx.lineTo(14,-34); ctx.lineTo(10,-72); ctx.lineTo(-10,-72); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#7a5230'; ctx.lineWidth=2; ctx.stroke();
+    // belt
+    ctx.fillStyle = '#2a1c12'; ctx.fillRect(-14,-46,28,5);
+    // head
+    ctx.fillStyle = '#d8a878';
+    ctx.beginPath(); ctx.arc(0,-84,12,0,7); ctx.fill();
+    // hood/cap
+    ctx.fillStyle = '#3a2a1c';
+    ctx.beginPath(); ctx.arc(0,-86,13,Math.PI,0); ctx.fill();
+
+    // arm & bow rotate toward pointer
+    ctx.save();
+    ctx.translate(2,-66);
+    ctx.rotate(ang);
+    ctx.strokeStyle = '#6b4a2e'; ctx.lineWidth = 5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.arc(18,0,20,-1.15,1.15); ctx.stroke();
+    ctx.strokeStyle = 'rgba(230,220,200,0.85)'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(18+20*Math.cos(-1.15), 20*Math.sin(-1.15));
+    ctx.lineTo(4,0);
+    ctx.lineTo(18+20*Math.cos(1.15), 20*Math.sin(1.15));
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  /* ============ Mice ============ */
+  function spawnMouse(){
+    const fromLeft = Math.random() < 0.5;
+    const roll = Math.random();
+    const isGold = roll < 0.08;
+    const isFast = !isGold && roll < 0.30;
+    const y = rand(GROUND_Y()-30, GROUND_Y()+22);
+    const speedBase = isGold ? rand(150,190) : isFast ? rand(120,155) : rand(60,95);
+    const speedMul = 1 + Math.min(elapsed/45000, 1.1); // ramps over ~45s
+    mice.push({
+      x: fromLeft ? -30 : W+30,
+      y,
+      dir: fromLeft ? 1 : -1,
+      speed: speedBase*speedMul,
+      isGold, isFast,
+      bob: Math.random()*10,
+      alive:true,
+      r: isGold ? 15 : 13,
+      wobblePhase: Math.random()*10,
+      caught:false,
+    });
+  }
+
+  function updateMice(dt){
+    for(const m of mice){
+      if(!m.alive) continue;
+      m.x += m.dir * m.speed * dt;
+      m.wobblePhase += dt*6;
+      m.y += Math.sin(m.wobblePhase + m.bob) * 6 * dt;
+      // reached granary?
+      if(Math.abs(m.x - CAPTURE_X()) < 26 && Math.abs(m.y-(GROUND_Y()+10)) < 60){
+        m.alive = false; m.caught = false; m.stole = true;
+        onGrainStolen(m);
+      }
+      // offscreen without reaching center (rare, just cleanup)
+      if(m.x < -60 || m.x > W+60){ m.alive = false; }
+    }
+    mice = mice.filter(m => m.alive || m.deathT !== undefined);
+  }
+
+  function drawMouse(m){
+    ctx.save();
+    ctx.translate(m.x, m.y);
+    const dir = m.dir;
+    const bodyColor = m.isGold ? '#f0c94a' : m.isFast ? '#7a5a44' : '#8a8378';
+    const earColor = m.isGold ? '#f7dc7a' : '#c79a8a';
+
+    if(m.isGold){
+      const glow = ctx.createRadialGradient(0,0,2,0,0,26);
+      glow.addColorStop(0,'rgba(255,224,120,0.55)');
+      glow.addColorStop(1,'rgba(255,224,120,0)');
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0,0,26,0,7); ctx.fill();
+    }
+
+    // tail
+    ctx.strokeStyle = bodyColor; ctx.lineWidth=2.4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-dir*12,2);
+    ctx.quadraticCurveTo(-dir*24, 10 + Math.sin(m.wobblePhase*2)*4, -dir*30, 0);
+    ctx.stroke();
+
+    // body
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath(); ctx.ellipse(0,0,m.r,m.r*0.72,0,0,7); ctx.fill();
+    // head
+    ctx.beginPath(); ctx.ellipse(dir*m.r*0.85,-2,m.r*0.55,m.r*0.48,0,0,7); ctx.fill();
+    // ears
+    ctx.fillStyle = earColor;
+    ctx.beginPath(); ctx.arc(dir*m.r*0.6,-m.r*0.8,4.2,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(dir*m.r*1.15,-m.r*0.75,4.2,0,7); ctx.fill();
+    // eye
+    ctx.fillStyle = '#211a12';
+    ctx.beginPath(); ctx.arc(dir*m.r*1.05,-3.5,1.6,0,7); ctx.fill();
+    // nose
+    ctx.fillStyle = '#c96a6a';
+    ctx.beginPath(); ctx.arc(dir*m.r*1.35,-1,1.6,0,7); ctx.fill();
+
+    ctx.restore();
+  }
+
+  /* ============ Arrows ============ */
+  function shootAt(tx,ty){
+    const ax = ARCHER_X(), ay = ARCHER_Y()-66;
+    const dx = tx-ax, dy = ty-ay;
+    const len = Math.hypot(dx,dy) || 1;
+    const speed = 900;
+    arrows.push({ x:ax, y:ay, px:ax, py:ay, vx:dx/len*speed, vy:dy/len*speed, angle:Math.atan2(dy,dx), alive:true });
+    sfx.shoot();
+  }
+
+  function updateArrows(dt){
+    for(const a of arrows){
+      if(!a.alive) continue;
+      a.px = a.x; a.py = a.y;
+      a.x += a.vx*dt; a.y += a.vy*dt;
+      // collision vs mice (segment vs circle, approx via point sampling)
+      for(const m of mice){
+        if(!m.alive) continue;
+        const d = distToSeg(m.x,m.y,a.px,a.py,a.x,a.y);
+        if(d < m.r+4){
+          a.alive = false;
+          killMouse(m, a.x, a.y);
+          break;
+        }
+      }
+      if(a.x<-40||a.x>W+40||a.y<-40||a.y>H+40) a.alive=false;
+    }
+    arrows = arrows.filter(a=>a.alive);
+  }
+
+  function distToSeg(px,py,x1,y1,x2,y2){
+    const dx=x2-x1, dy=y2-y1;
+    const l2 = dx*dx+dy*dy;
+    if(l2===0) return Math.hypot(px-x1,py-y1);
+    let t = ((px-x1)*dx+(py-y1)*dy)/l2;
+    t = clamp(t,0,1);
+    const cx = x1+t*dx, cy = y1+t*dy;
+    return Math.hypot(px-cx,py-cy);
+  }
+
+  /* ============ Scoring / events ============ */
+  function killMouse(m, hx, hy){
+    m.alive = false;
+    combo++;
+    bestCombo = Math.max(bestCombo, combo);
+    kills++;
+    const base = m.isGold ? 50 : m.isFast ? 15 : 10;
+    const mult = 1 + Math.floor(combo/5)*0.5;
+    const pts = Math.round(base*mult);
+    score += pts;
+    scoreVal.textContent = score;
+    if(m.isGold) sfx.gold(); else sfx.hit();
+    spawnBurst(hx,hy, m.isGold ? '#f7dc7a' : '#c9b48c', pts);
+    flashCombo();
+  }
+
+  function onGrainStolen(m){
+    lives = Math.max(0, lives-1);
+    combo = 0;
+    sfx.steal();
+    spawnBurst(m.x, m.y, '#8a6a2e', null, true);
+    renderSacks();
+    if(lives<=0){ endGame(true); }
+  }
+
+  function flashCombo(){
+    if(combo >= 3){
+      comboEl.textContent = `Seria ×${combo}!`;
+      comboEl.style.opacity = '1';
+      clearTimeout(flashCombo._t);
+      flashCombo._t = setTimeout(()=>{ comboEl.style.opacity='0'; }, 700);
+    }
+  }
+
+  function spawnBurst(x,y,color,pts,steal){
+    for(let i=0;i<(steal?10:12);i++){
+      const ang = Math.random()*Math.PI*2;
+      const spd = rand(40,140);
+      particles.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd - (steal?0:60),life:1,color,steal});
+    }
+    if(pts){
+      particles.push({x,y,vx:0,vy:-40,life:1.3,color:'#fff6d8',text:`+${pts}`, isText:true});
+    }
+  }
+
+  function updateParticles(dt){
+    for(const p of particles){
+      p.x += p.vx*dt; p.y += p.vy*dt; p.vy += (p.isText?20:220)*dt;
+      p.life -= dt*(p.isText?0.9:1.6);
+    }
+    particles = particles.filter(p=>p.life>0);
+  }
+
+  function drawParticles(){
+    for(const p of particles){
+      ctx.globalAlpha = clamp(p.life,0,1);
+      if(p.isText){
+        ctx.font = "600 20px 'Cinzel', serif";
+        ctx.fillStyle = p.color; ctx.textAlign='center';
+        ctx.fillText(p.text, p.x, p.y);
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x,p.y, p.steal?4:3, 0, 7); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function renderSacks(){
+    sacksEl.innerHTML = '';
+    for(let i=0;i<3;i++){
+      const d = document.createElement('div');
+      d.className = 'sack' + (i < (3-lives) ? ' lost' : '');
+      sacksEl.appendChild(d);
+    }
+  }
+
+  /* ============ Crosshair ============ */
+  function drawCrosshair(){
+    if(!pointer.active) return;
+    const {x,y} = pointer;
+    ctx.strokeStyle = 'rgba(230,200,140,0.85)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(x,y,12,0,7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x-18,y); ctx.lineTo(x-6,y); ctx.moveTo(x+6,y); ctx.lineTo(x+18,y);
+    ctx.moveTo(x,y-18); ctx.lineTo(x,y-6); ctx.moveTo(x,y+6); ctx.lineTo(x,y+18);
+    ctx.stroke();
+  }
+
+  function drawArrowsShapes(){
+    for(const a of arrows){
+      ctx.save();
+      ctx.translate(a.x,a.y); ctx.rotate(a.angle);
+      ctx.strokeStyle = '#3a2a1c'; ctx.lineWidth=2.4; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-16,0); ctx.lineTo(4,0); ctx.stroke();
+      ctx.fillStyle = '#c9a24b';
+      ctx.beginPath(); ctx.moveTo(10,0); ctx.lineTo(2,-3.5); ctx.lineTo(2,3.5); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#8a8378'; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.moveTo(-16,0); ctx.lineTo(-22,-3); ctx.moveTo(-16,0); ctx.lineTo(-22,3); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /* ============ Main loop ============ */
+  function frame(ts){
+    if(!lastTs) lastTs = ts;
+    let dt = (ts-lastTs)/1000; lastTs = ts;
+    dt = Math.min(dt, 0.05);
+    elapsed += dt*1000;
+
+    if(state === STATE.PLAY){
+      spawnTimer -= dt*1000;
+      const spawnInterval = Math.max(1500 - elapsed*0.02, 480);
+      if(spawnTimer <= 0){ spawnMouse(); spawnTimer = spawnInterval * rand(0.7,1.15); }
+
+      updateMice(dt);
+      updateArrows(dt);
+      updateParticles(dt);
+
+      timeLeft -= dt;
+      if(timeLeft <= 0){ timeLeft = 0; endGame(false); }
+      timeVal.textContent = Math.ceil(timeLeft);
+    } else {
+      updateParticles(dt);
+    }
+
+    ctx.clearRect(0,0,W,H);
+    drawBackground();
+    for(const m of mice) if(m.alive) drawMouse(m);
+    drawArrowsShapes();
+    drawParticles();
+    if(state===STATE.PLAY) drawArcher();
+    if(state===STATE.PLAY) drawCrosshair();
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  /* ============ Input ============ */
+  function setPointerFromEvent(e){
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    pointer.x = cx; pointer.y = cy; pointer.active = true;
+  }
+  canvas.addEventListener('mousemove', (e)=>{ setPointerFromEvent(e); });
+  canvas.addEventListener('touchmove', (e)=>{ setPointerFromEvent(e); }, {passive:true});
+  canvas.addEventListener('mousedown', (e)=>{
+    setPointerFromEvent(e);
+    if(state===STATE.PLAY) shootAt(pointer.x,pointer.y);
+  });
+  canvas.addEventListener('touchstart', (e)=>{
+    setPointerFromEvent(e);
+    if(state===STATE.PLAY) shootAt(pointer.x,pointer.y);
+  }, {passive:true});
+  window.addEventListener('keydown', (e)=>{
+    if(e.code==='Space' && state===STATE.PLAY && pointer.active){
+      e.preventDefault(); shootAt(pointer.x,pointer.y);
+    }
+  });
+
+  /* ============ Flow control ============ */
+  function startGame(){
+    nickname = (nickInput.value || 'Łowca').trim().slice(0,16) || 'Łowca';
+    score = 0; timeLeft = 60; lives = 3; combo = 0; bestCombo = 0; kills = 0;
+    elapsed = 0; spawnTimer = 300; mice=[]; arrows=[]; particles=[];
+    scoreVal.textContent='0'; timeVal.textContent='60';
+    renderSacks();
+    menuScreen.classList.add('hidden');
+    overScreen.classList.add('hidden');
+    hud.classList.remove('hidden');
+    state = STATE.PLAY;
+    sfx.start();
+  }
+
+  function endGame(byLoss){
+    state = STATE.OVER;
+    hud.classList.add('hidden');
+    sfx.over();
+    const overTitle = document.getElementById('overTitle');
+    const overText = document.getElementById('overText');
+    const overEyebrow = document.getElementById('overEyebrow');
+    if(byLoss){
+      overEyebrow.textContent = 'Klęska nad Gopłem';
+      overTitle.textContent = 'Myszy zdobyły spichlerz!';
+      overText.textContent = `Tak jak niegdyś księcia Popiela, ziarno Kruszwicy pochłonęły gryzonie. Upolowałeś ${kills} myszy i zdobyłeś ${score} pkt, zanim padł ostatni worek.`;
+    } else {
+      overEyebrow.textContent = 'Zmierzch zapadł nad jeziorem';
+      overTitle.textContent = 'Spichlerz ocalał!';
+      overText.textContent = `Obroniłeś ziarno Kruszwicy do końca nocy. Upolowałeś ${kills} myszy, najlepsza seria: ×${bestCombo}.`;
+    }
+    saveScore();
+    renderLeaderboard();
+    overScreen.classList.remove('hidden');
+  }
+
+  /* ============ Leaderboard (localStorage) ============ */
+  const LB_KEY = 'kruszwica_mysia_wieza_leaderboard_v1';
+  let lastEntryId = null;
+  function saveScore(){
+    let list = [];
+    try{ list = JSON.parse(localStorage.getItem(LB_KEY)) || []; }catch(e){ list = []; }
+    const id = Date.now()+'_'+Math.random().toString(36).slice(2,7);
+    list.push({ id, name: nickname, score, ts: Date.now() });
+    list.sort((a,b)=>b.score-a.score);
+    list = list.slice(0,10);
+    lastEntryId = list.find(e=>e.id===id) ? id : null;
+    localStorage.setItem(LB_KEY, JSON.stringify(list));
+  }
+  function renderLeaderboard(){
+    let list = [];
+    try{ list = JSON.parse(localStorage.getItem(LB_KEY)) || []; }catch(e){ list = []; }
+    const tbl = document.getElementById('leaderboard');
+    if(list.length===0){ tbl.innerHTML=''; return; }
+    tbl.innerHTML = '<tr><td colspan="3" style="font-family:\'Cinzel\',serif; font-size:11px; letter-spacing:.1em; color:#6b4e1c; padding-top:10px;">NAJLEPSI ŁOWCY KRUSZWICY</td></tr>' +
+      list.map((e,i)=>`<tr class="${e.id===lastEntryId?'me':''}"><td class="rank">${i+1}.</td><td>${escapeHtml(e.name)}</td><td style="text-align:right; font-weight:600;">${e.score}</td></tr>`).join('');
+  }
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  startBtn.addEventListener('click', startGame);
+  nickInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') startGame(); });
+  againBtn.addEventListener('click', ()=>{
+    overScreen.classList.add('hidden');
+    menuScreen.classList.remove('hidden');
+    nickInput.focus();
+  });
+
+  renderSacks();
+  // initial idle background render loop already runs via requestAnimationFrame
+
+})();
+</script>
+</body>
+</html>
