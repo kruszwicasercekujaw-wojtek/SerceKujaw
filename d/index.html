@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Kruszwica-Polowanie Na Myszy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --parchment:#ECE0C4;
+    --parchment-dark:#D8C79E;
+    --ink:#2A1D12;
+    --wood:#4A2E1E;
+    --wood-dark:#301C10;
+    --gold:#C9A24B;
+    --gold-bright:#E8C876;
+    --lake-deep:#0E2E33;
+    --lake:#1F4B4A;
+    --danger:#8B2E2E;
+    --danger-bright:#C24A3E;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background:var(--wood-dark);
+    font-family:'EB Garamond', serif;
+    color:var(--parchment);
+    -webkit-tap-highlight-color: transparent;
+  }
+  #stage{
+    position:relative; width:100vw; height:100vh; overflow:hidden;
+  }
+  canvas{ display:block; width:100%; height:100%; touch-action:none; cursor:none; }
+
+  /* ---------- Overlays ---------- */
+  .overlay{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; text-align:center; padding:24px;
+    background:radial-gradient(ellipse at center, rgba(14,46,51,0.35), rgba(10,10,8,0.82) 75%);
+    animation: fadeIn .5s ease;
+  }
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  .hidden{ display:none !important; }
+
+  .plaque{
+    position:relative;
+    background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
+    border:3px solid var(--wood);
+    box-shadow: 0 0 0 6px var(--wood-dark), 0 20px 50px rgba(0,0,0,0.55), inset 0 0 30px rgba(74,46,30,0.25);
+    border-radius:6px;
+    padding:36px 42px;
+    max-width:520px;
+    width:92%;
+    color:var(--ink);
+  }
+  .modal-close{
+    position:absolute; top:8px; right:10px;
+    width:30px; height:30px; border-radius:50%;
+    border:none; background:rgba(74,46,30,0.12);
+    color:var(--wood); font-family:'Cinzel',serif; font-size:18px; line-height:1;
+    cursor:pointer;
+  }
+  .modal-close:hover{ background:rgba(74,46,30,0.22); }
+
+  /* ---------- Attract-mode CTA (idle screen, board visible behind) ---------- */
+  .cta-wrap{
+    position:absolute; inset:0; z-index:6;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:none;
+  }
+  .cta-box{
+    pointer-events:auto;
+    text-align:center;
+    background:linear-gradient(180deg, rgba(42,29,18,0.85), rgba(20,13,7,0.88));
+    border:1px solid var(--gold);
+    border-radius:10px;
+    padding:20px 36px 26px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    animation: fadeIn .6s ease;
+  }
+  .cta-box .eyebrow{ color:var(--gold-bright); opacity:.9; }
+  .cta-title{
+    font-family:'Cinzel', serif;
+    font-size:clamp(20px, 4vw, 30px);
+    margin:0 0 16px;
+    line-height:1.2;
+    color:var(--parchment);
+    text-shadow:0 2px 10px rgba(0,0,0,0.6);
+  }
+  #playBtn{ font-size:20px; padding:16px 48px; margin-top:0; }
+  @media (max-width:520px){
+    .cta-box{ padding:16px 22px 20px; }
+    #playBtn{ font-size:17px; padding:14px 36px; }
+  }
+  .eyebrow{
+    font-family:'Cinzel', serif;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--danger);
+    margin:0 0 6px;
+  }
+  h1{
+    font-family:'Cinzel', serif;
+    font-size:clamp(28px, 5vw, 40px);
+    margin:0 0 10px;
+    line-height:1.15;
+    color:var(--wood);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .legend{
+    font-size:16.5px;
+    line-height:1.55;
+    font-style:italic;
+    color:#3a2a18;
+    margin: 0 0 22px;
+    border-top:1px solid rgba(74,46,30,0.3);
+    border-bottom:1px solid rgba(74,46,30,0.3);
+    padding:14px 4px;
+  }
+  label.nick-label{
+    display:block; font-family:'Cinzel',serif; font-size:12px; letter-spacing:.14em;
+    text-transform:uppercase; margin-bottom:8px; color:var(--wood);
+  }
+  #nickInput{
+    width:100%; font-family:'EB Garamond', serif; font-size:19px; text-align:center;
+    padding:11px 14px; border-radius:4px; border:2px solid var(--wood);
+    background:#fbf6e8; color:var(--ink); outline:none;
+  }
+  #nickInput:focus{ border-color:var(--danger); box-shadow:0 0 0 3px rgba(139,46,46,0.18); }
+
+  .btn{
+    font-family:'Cinzel', serif;
+    letter-spacing:.06em;
+    font-size:16px;
+    padding:13px 30px;
+    margin-top:20px;
+    border:none;
+    border-radius:4px;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+    color:#3a2408;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow: 0 4px 0 #8a6d2e, 0 8px 16px rgba(0,0,0,0.35);
+    transition: transform .08s ease, box-shadow .08s ease;
+  }
+  .btn:active{ transform:translateY(4px); box-shadow:0 0px 0 #8a6d2e, 0 3px 8px rgba(0,0,0,0.3); }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn.secondary{
+    background:linear-gradient(180deg,#5a4028,#3d2a18);
+    color:var(--parchment);
+    box-shadow: 0 4px 0 #241609, 0 8px 16px rgba(0,0,0,0.35);
+    margin-left:10px;
+  }
+
+  .hint{ font-size:13px; margin-top:16px; color:#5a4429; }
+
+  /* ---------- HUD ---------- */
+  #hud{
+    position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between;
+    align-items:flex-start; padding:14px 18px; pointer-events:none; z-index:5;
+  }
+  .hud-box{
+    background:linear-gradient(180deg, rgba(42,29,18,0.82), rgba(24,16,9,0.82));
+    border:1px solid var(--gold);
+    border-radius:6px;
+    padding:8px 14px;
+    font-family:'Cinzel', serif;
+    font-size:13px;
+    letter-spacing:.05em;
+    box-shadow:0 4px 10px rgba(0,0,0,0.4);
+  }
+  .hud-box .val{ font-size:20px; color:var(--gold-bright); display:block; margin-top:2px; }
+  #scoreVal{ color:#ffffff; text-shadow:0 2px 6px rgba(0,0,0,0.6); }
+  #sacks{ display:flex; gap:6px; margin-top:4px; }
+  .sack{ width:16px; height:18px; border-radius:2px 2px 6px 6px; background:var(--gold); border:1px solid #6b4e1c; opacity:1; transition: opacity .3s, transform .3s; }
+  .sack.lost{ opacity:.18; transform:scale(.8) rotate(15deg); background:#555; }
+  #combo{
+    position:absolute; left:50%; top:16px; transform:translateX(-50%);
+    font-family:'Cinzel',serif; color:var(--gold-bright); font-size:15px;
+    text-shadow:0 2px 6px rgba(0,0,0,0.6);
+    opacity:0; transition:opacity .2s;
+    pointer-events:none; z-index:5;
+  }
+
+  #results{ text-align:left; }
+  #results table{ width:100%; border-collapse:collapse; margin-top:6px; font-size:15px;}
+  #results td{ padding:4px 6px; border-bottom:1px solid rgba(74,46,30,0.2); }
+  #results tr.me{ background:rgba(201,162,75,0.28); font-weight:600; }
+  #results .rank{ width:26px; color:var(--danger); font-family:'Cinzel',serif; }
+
+  /* ---------- In-game TOP 5 leaderboard (top-right, stays clear of play area) ---------- */
+  #cloudBoard{
+    position:absolute; top:120px; right:18px; z-index:5;
+    display:flex; flex-direction:column; align-items:flex-end; gap:4px;
+    pointer-events:none; max-width:50vw; text-align:right;
+  }
+  #cloudBoard .cb-title{
+    font-family:'Cinzel',serif; font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:#ffffff; text-shadow:0 2px 6px rgba(0,0,0,0.75); margin-bottom:4px; opacity:.9;
+  }
+  .cb-title-inline{
+    font-family:'Cinzel',serif; font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+    color:#ffe9b0; opacity:.85; margin-right:10px;
+  }
+  .score-row{
+    font-family:'EB Garamond', serif;
+    font-size:15px;
+    color:#ffffff;
+    text-shadow:0 2px 6px rgba(0,0,0,0.75);
+    text-align:right;
+    white-space:nowrap;
+  }
+  .score-row .cb-rank{ font-family:'Cinzel',serif; color:#ffe9b0; margin-right:6px; }
+  .score-row .cb-score{ font-weight:700; margin-left:8px; }
+  .score-row.me{ color:var(--gold-bright); font-weight:700; }
+  .score-row.empty{ opacity:.7; font-style:italic; font-size:13px; }
+
+  @media (max-width:640px){
+    #cloudBoard{ top:105px; right:10px; gap:2px; max-width:56vw; }
+    .score-row{ font-size:12.5px; }
+    #cloudBoard .cb-title{ font-size:9px; }
+    .cb-title-inline{ font-size:8.5px; margin-right:6px; }
+  }
+
+
+
+  @media (max-width:520px){
+    .plaque{ padding:26px 20px; }
+    h1{ font-size:24px; }
+    .legend{ font-size:15px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- HUD during gameplay -->
+  <div id="hud" class="hidden">
+    <div class="hud-box">
+      ŁUP<span class="val" id="scoreVal">0</span>
+    </div>
+    <div class="hud-box" style="text-align:center;">
+      SPICHLERZ
+      <div id="sacks"></div>
+    </div>
+    <div class="hud-box" style="text-align:right;">
+      CZAS<span class="val" id="timeVal">60</span>
+    </div>
+  </div>
+  <div id="combo"></div>
+  <div id="cloudBoard"></div>
+
+  <!-- Idle attract-mode screen: game board + top-5 visible behind, archer auto-shoots until PLAY -->
+  <div class="cta-wrap" id="menuScreen">
+    <div class="cta-box">
+      <p class="eyebrow">Rok Pański 965, gród nad jeziorem Gopło</p>
+      <h1 class="cta-title">Kruszwica<br>Polowanie Na Myszy</h1>
+      <button class="btn" id="playBtn">▶ Graj</button>
+    </div>
+  </div>
+
+  <!-- Nickname popup: opens after pressing PLAY, must be filled before real hunt starts -->
+  <div class="overlay hidden" id="nicknameModal">
+    <div class="plaque">
+      <button class="modal-close" id="modalCloseBtn" aria-label="Zamknij">×</button>
+      <p class="eyebrow">Rok Pański 965, gród nad jeziorem Gopło</p>
+      <h1>Zanim ruszysz na łowy</h1>
+      <p class="legend">
+        Legenda głosi, że w Mysiej Wieży na wyspie ukarano niegdyś okrutnego księcia Popiela -
+        zjedzony został żywcem przez myszy. Odtąd co roku, gdy zapada zmierzch nad Gopłem,
+        gryzonie znów pojawiają się w Kruszwicy. Chwyć łuk i broń ziarna. Nie pozwól,
+        by historia się powtórzyła. Strzeż się jednak przebiegających strażników-łuczników -
+        trafienie jednego z nich kosztuje Cię <strong>-20 punktów</strong>!
+      </p>
+      <label class="nick-label" for="nickInput">Podaj swe imię, łowco</label>
+      <input id="nickInput" type="text" maxlength="16" placeholder="np. Piast" autocomplete="off">
+      <div>
+        <button class="btn" id="startBtn">Rozpocznij łowy</button>
+      </div>
+      <p class="hint">Celuj palcem, kliknij lub dotknij cel, by wypuścić strzałę. Omijaj łuczników - nie są celem!</p>
+    </div>
+  </div>
+
+  <!-- Game Over -->
+  <div class="overlay hidden" id="overScreen">
+    <div class="plaque" id="results">
+      <p class="eyebrow" id="overEyebrow">Łowy dobiegły końca</p>
+      <h1 id="overTitle">Spichlerz ocalał</h1>
+      <p class="legend" id="overText"></p>
+      <table id="leaderboard"></table>
+      <div style="text-align:center;">
+        <button class="btn" id="againBtn">Zapoluj ponownie</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ Setup ============ */
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const stage = document.getElementById('stage');
+  const menuScreen = document.getElementById('menuScreen');
+  const nicknameModal = document.getElementById('nicknameModal');
+  const overScreen = document.getElementById('overScreen');
+  const hud = document.getElementById('hud');
+  const nickInput = document.getElementById('nickInput');
+  const playBtn = document.getElementById('playBtn');
+  const startBtn = document.getElementById('startBtn');
+  const modalCloseBtn = document.getElementById('modalCloseBtn');
+  const againBtn = document.getElementById('againBtn');
+  const scoreVal = document.getElementById('scoreVal');
+  const timeVal = document.getElementById('timeVal');
+  const sacksEl = document.getElementById('sacks');
+  const comboEl = document.getElementById('combo');
+  const cloudBoard = document.getElementById('cloudBoard');
+
+  let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  function resize(){
+    W = stage.clientWidth; H = stage.clientHeight;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  /* ============ Audio (synth, no assets) ============ */
+  let actx = null;
+  function ac(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+  function beep(freq, dur, type, gain, glideTo){
+    const a = ac(); if(!a) return;
+    const osc = a.createOscillator(); const g = a.createGain();
+    osc.type = type || 'sine'; osc.frequency.setValueAtTime(freq, a.currentTime);
+    if(glideTo) osc.frequency.exponentialRampToValueAtTime(glideTo, a.currentTime + dur);
+    g.gain.setValueAtTime(gain||0.15, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + dur);
+    osc.connect(g); g.connect(a.destination);
+    osc.start(); osc.stop(a.currentTime + dur);
+  }
+  const sfx = {
+    shoot: () => beep(340,0.12,'triangle',0.10,180),
+    hit:   () => beep(660,0.14,'square',0.14,900),
+    gold:  () => { beep(500,0.18,'square',0.16,1300); setTimeout(()=>beep(760,0.16,'square',0.13,1500),70); },
+    steal: () => beep(140,0.30,'sawtooth',0.16,60),
+    penalty: () => { beep(220,0.14,'sawtooth',0.16,90); setTimeout(()=>beep(160,0.20,'sawtooth',0.14,70),60); },
+    start: () => { beep(300,0.14,'triangle',0.12,500); },
+    over:  () => beep(220,0.5,'sine',0.14,110),
+  };
+
+  /* ============ Game state ============ */
+  const STATE = { MENU:'menu', PLAY:'play', OVER:'over' };
+  let state = STATE.MENU;
+  let nickname = 'Łowca';
+  let score = 0, timeLeft = 60, lives = 3, combo = 0, bestCombo = 0, kills = 0;
+  let elapsed = 0;
+  let spawnTimer = 0;
+  let mice = [], arrows = [], particles = [];
+  let raiders = [], raiderSpawnTimer = 2600;
+  let pointer = { x: 0, y: 0, active:false };
+  let lastTs = 0;
+  let idleSpawnTimer = 0, idleShootTimer = 600;
+
+  const GROUND_Y = () => H*0.66;      // path where mice run
+  const CAPTURE_X = () => W/2;        // granary position
+  const ARCHER_X = () => W/2;
+  const ARCHER_Y = () => H*0.86;
+
+  /* ============ Helpers ============ */
+  function rand(a,b){ return a + Math.random()*(b-a); }
+  function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+  /* ============ Background scene (modeled on the real Mysia Wieża, Kruszwica) ============ */
+  // deterministic pseudo-random helper so texture dots/clouds don't flicker between frames
+  function pr(seed){ const x = Math.sin(seed*99991.317)*10000; return x - Math.floor(x); }
+
+  function drawBackground(){
+    const horizon = H*0.62;
+
+    // sky — clear daytime blue like the photo
+    const sky = ctx.createLinearGradient(0,0,0,horizon);
+    sky.addColorStop(0,'#1e6fb8');
+    sky.addColorStop(0.55,'#4fa3dd');
+    sky.addColorStop(1,'#bfe6f7');
+    ctx.fillStyle = sky; ctx.fillRect(0,0,W,horizon+2);
+
+    // soft clouds
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    [[0.10,0.16,1],[0.14,0.19,0.7],[0.62,0.10,0.9],[0.70,0.135,0.6],[0.85,0.22,0.75]].forEach(([cx,cy,s],i)=>{
+      const x=W*cx, y=H*cy;
+      ctx.beginPath();
+      ctx.ellipse(x,y,34*s,13*s,0,0,7);
+      ctx.ellipse(x+22*s,y+4*s,24*s,10*s,0,0,7);
+      ctx.ellipse(x-20*s,y+5*s,20*s,9*s,0,0,7);
+      ctx.fill();
+    });
+
+    // distant tree line along the horizon
+    ctx.fillStyle = '#2f5a34';
+    for(let i=0;i<26;i++){
+      const x = W*(i/25);
+      const rh = 10 + pr(i*3.1)*16;
+      ctx.beginPath(); ctx.ellipse(x, horizon-rh*0.4, 26, rh, 0,0,7); ctx.fill();
+    }
+
+    // Mysia Wieża — brick octagonal tower on its hill, with ruined walls either side
+    drawTower(W*0.30, horizon+2, clamp(H*0.000729, 0.32, 0.85));
+
+    // grass foreground where mice/archers run and the hunter stands
+    const groundGrad = ctx.createLinearGradient(0,horizon-6,0,H);
+    groundGrad.addColorStop(0,'#5c8a3f');
+    groundGrad.addColorStop(0.35,'#4a7332');
+    groundGrad.addColorStop(1,'#2c4a20');
+    ctx.fillStyle = groundGrad;
+    ctx.beginPath();
+    ctx.moveTo(0,horizon);
+    ctx.quadraticCurveTo(W*0.5,horizon-10,W,horizon);
+    ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+
+    // gravel path curving through the grass, like the park path in the photo
+    ctx.strokeStyle = 'rgba(198,178,140,0.55)';
+    ctx.lineWidth = Math.max(18, H*0.05);
+    ctx.beginPath();
+    ctx.moveTo(W*0.5, H*1.02);
+    ctx.quadraticCurveTo(W*0.46, H*0.86, W*0.5, GROUND_Y()+30);
+    ctx.stroke();
+    ctx.lineWidth = Math.max(10, H*0.028);
+    ctx.strokeStyle = 'rgba(198,178,140,0.35)';
+    ctx.beginPath();
+    ctx.moveTo(W*0.14, H*1.02); ctx.quadraticCurveTo(W*0.36, H*0.82, W*0.5, GROUND_Y()+34);
+    ctx.moveTo(W*0.86, H*1.02); ctx.quadraticCurveTo(W*0.64, H*0.82, W*0.5, GROUND_Y()+34);
+    ctx.stroke();
+
+    // flanking trees — kept well BELOW the mouse-running lane (GROUND_Y) and shrunk down,
+    // so mice always run cleanly in front of them: no overlap, no hiding behind foliage.
+    drawFgTree(W*0.10, GROUND_Y()+95, 0.55);
+    drawFgTree(W*0.905, GROUND_Y()+85, 0.5);
+
+    // granary (grain sacks) at capture point
+    drawGranary(CAPTURE_X(), GROUND_Y()+18);
+  }
+
+  function drawFgTree(x,y,scale){
+    ctx.save(); ctx.translate(x,y); ctx.scale(scale,scale);
+    ctx.fillStyle='rgba(0,0,0,0.18)';
+    ctx.beginPath(); ctx.ellipse(0,86,58,12,0,0,7); ctx.fill();
+    ctx.strokeStyle='#3d2c1c'; ctx.lineWidth=10; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(0,80); ctx.lineTo(0,10); ctx.stroke();
+    const leaf = ['#2f6b32','#3a7a3c','#26582b'];
+    const blobs = [[-30,-4,34],[26,-2,32],[0,-38,42],[-16,-56,26],[18,-58,24],[0,-6,30]];
+    blobs.forEach(([bx,by,r],i)=>{
+      ctx.fillStyle = leaf[i%leaf.length];
+      ctx.beginPath(); ctx.arc(bx,by,r,0,7); ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  function drawTower(x,y,scale){
+    ctx.save(); ctx.translate(x,y); ctx.scale(scale,scale);
+
+    const H0 = 300;              // tower height (kept modest so it reads like the real Mysia Wieża)
+    const wBase = 46, wTop = 40; // slight taper, base->top half-widths
+    const bevel = 15;            // side facet width (gives the octagonal, faceted look)
+
+    // ---- grassy hill the tower stands on ----
+    const hillW = 250, hillH = 76, hillTop = -hillH;
+    const hillGrad = ctx.createLinearGradient(0,hillTop,0,26);
+    hillGrad.addColorStop(0,'#75a14c');
+    hillGrad.addColorStop(0.55,'#517a34');
+    hillGrad.addColorStop(1,'#375822');
+    ctx.fillStyle = hillGrad;
+    ctx.beginPath();
+    ctx.moveTo(-hillW,30);
+    ctx.quadraticCurveTo(-hillW*0.62, hillTop+14, -wBase-34, hillTop+20);
+    ctx.quadraticCurveTo(0, hillTop-8, wBase+96, hillTop+16);
+    ctx.quadraticCurveTo(hillW*0.78, hillTop+14, hillW,30);
+    ctx.lineTo(hillW,64); ctx.lineTo(-hillW,64);
+    ctx.closePath(); ctx.fill();
+    // dappled darker grass patches for texture
+    ctx.fillStyle = 'rgba(40,58,20,0.28)';
+    for(let i=0;i<16;i++){
+      const hx = -hillW*0.82 + pr(i*4.4)*hillW*1.64;
+      const hy = hillTop+22 + pr(i*7.7)*42;
+      ctx.beginPath(); ctx.ellipse(hx,hy, 13+pr(i)*9, 5+pr(i+2)*4, 0,0,7); ctx.fill();
+    }
+    // a touch of highlight along the hill crest
+    ctx.strokeStyle = 'rgba(160,200,110,0.35)'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-wBase-40,hillTop+22);
+    ctx.quadraticCurveTo(0,hillTop-4,wBase+100,hillTop+18);
+    ctx.stroke();
+
+    // lift everything above so the tower's base sits on the hill's crest
+    ctx.translate(0, hillTop+16);
+
+    // stone rubble plinth
+    ctx.fillStyle = '#8f8a7c';
+    ctx.beginPath(); ctx.ellipse(6,10,wBase+50,20,0,0,7); ctx.fill();
+    for(let i=0;i<24;i++){
+      const rx = -wBase-34 + pr(i)*(wBase*2+150);
+      const ry = 4 + pr(i+50)*13;
+      ctx.fillStyle = pr(i+7) > 0.5 ? '#a29c8c' : '#726c5e';
+      ctx.beginPath(); ctx.arc(rx,ry, 4+pr(i+20)*4.5, 0, 7); ctx.fill();
+    }
+
+    // ---- main brick front face ----
+    const grad = ctx.createLinearGradient(-wBase,0,wBase,0);
+    grad.addColorStop(0,'#7a3823');
+    grad.addColorStop(0.5,'#b8552f');
+    grad.addColorStop(1,'#8c4327');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(-wBase,0); ctx.lineTo(-wTop,-H0); ctx.lineTo(wTop,-H0); ctx.lineTo(wBase,0);
+    ctx.closePath(); ctx.fill();
+
+    // left facet (shadowed side)
+    ctx.fillStyle = '#5a2a1b';
+    ctx.beginPath();
+    ctx.moveTo(-wBase,0); ctx.lineTo(-wBase-bevel,5);
+    ctx.lineTo(-wTop-bevel*0.6,-H0+4); ctx.lineTo(-wTop,-H0);
+    ctx.closePath(); ctx.fill();
+
+    // right facet (lit side)
+    ctx.fillStyle = '#c8895c';
+    ctx.beginPath();
+    ctx.moveTo(wBase,0); ctx.lineTo(wBase+bevel*0.55,4);
+    ctx.lineTo(wTop+bevel*0.32,-H0+3); ctx.lineTo(wTop,-H0);
+    ctx.closePath(); ctx.fill();
+
+    // clip brick texture (coursing + putlog holes) to the front face
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(-wBase,0); ctx.lineTo(-wTop,-H0); ctx.lineTo(wTop,-H0); ctx.lineTo(wBase,0); ctx.closePath();
+    ctx.clip();
+    ctx.strokeStyle = 'rgba(35,16,10,0.35)'; ctx.lineWidth = 1;
+    const rows = 22;
+    for(let i=1;i<rows;i++){
+      const t = i/rows, yy = -t*H0;
+      const l = -wBase + t*(wBase-wTop), r = wBase - t*(wBase-wTop);
+      ctx.beginPath(); ctx.moveTo(l,yy); ctx.lineTo(r,yy); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(30,14,9,0.55)';
+    for(let i=0;i<55;i++){
+      const t = pr(i*2.7);
+      const yy = -t*H0*0.97 - 4;
+      const span = wBase - t*(wBase-wTop);
+      const xx = (pr(i*5.3+1)-0.5)*span*1.7;
+      ctx.beginPath(); ctx.ellipse(xx,yy, 2.6, 1.8, 0,0,7); ctx.fill();
+    }
+    // subtle darker weather streaks
+    ctx.fillStyle = 'rgba(20,10,6,0.15)';
+    ctx.beginPath(); ctx.ellipse(-wTop*0.3,-H0*0.7,wTop*0.5,H0*0.28,0.15,0,7); ctx.fill();
+    ctx.restore();
+
+    // flat broken top edge (ruin) + thin rod
+    ctx.fillStyle = '#5f2c1e';
+    ctx.beginPath();
+    ctx.moveTo(-wTop,-H0); ctx.lineTo(wTop,-H0);
+    ctx.lineTo(wTop-5,-H0-7); ctx.lineTo(-wTop+7,-H0-9);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(-2,-H0-8); ctx.lineTo(-2,-H0-34); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-8,-H0-25); ctx.lineTo(4,-H0-25); ctx.stroke();
+
+    // ---- attached ruined wall stub, jutting to the right like in the photo ----
+    ctx.fillStyle = '#9a4b31';
+    ctx.beginPath();
+    ctx.moveTo(wBase-2,0);
+    ctx.lineTo(wBase+14,-26);
+    ctx.lineTo(wBase+60,-74);
+    ctx.lineTo(wBase+78,-118);
+    ctx.lineTo(wBase+150,-132);
+    ctx.lineTo(wBase+150,4);
+    ctx.closePath(); ctx.fill();
+    // shading + brick lines on the stub
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(wBase-2,0); ctx.lineTo(wBase+14,-26); ctx.lineTo(wBase+60,-74);
+    ctx.lineTo(wBase+78,-118); ctx.lineTo(wBase+150,-132); ctx.lineTo(wBase+150,4);
+    ctx.closePath(); ctx.clip();
+    ctx.fillStyle = 'rgba(30,14,9,0.28)';
+    ctx.beginPath(); ctx.rect(wBase+60,-140,120,150); ctx.fill();
+    ctx.strokeStyle='rgba(35,16,10,0.3)'; ctx.lineWidth=1;
+    for(let i=0;i<10;i++){
+      const yy = 0 - i*13;
+      ctx.beginPath(); ctx.moveTo(wBase-2,yy); ctx.lineTo(wBase+150,yy); ctx.stroke();
+    }
+    ctx.restore();
+    // small dark equipment box on top of the stub (echoes the lamp fixtures in the photo)
+    ctx.fillStyle = '#1c1c1c';
+    ctx.fillRect(wBase+66,-124,10,8);
+    ctx.fillRect(wBase+96,-134,9,7);
+
+    // stone plinth under the ruined wall
+    ctx.fillStyle = '#847e70';
+    ctx.beginPath(); ctx.ellipse(wBase+90,10,68,15,0,0,7); ctx.fill();
+
+    // ---- defensive wall (mur obronny) jutting out to the left, mirroring the right-hand stub ----
+    ctx.fillStyle = '#8f4229';
+    ctx.beginPath();
+    ctx.moveTo(-wBase+2,0);
+    ctx.lineTo(-wBase-16,-30);
+    ctx.lineTo(-wBase-58,-58);
+    ctx.lineTo(-wBase-92,-64);
+    ctx.lineTo(-wBase-138,-58);
+    ctx.lineTo(-wBase-138,6);
+    ctx.closePath(); ctx.fill();
+    // battlements (crenellations) along the top of the wall
+    ctx.fillStyle = '#7a381f';
+    for(let i=0;i<4;i++){
+      const t = i/3;
+      const bx = -wBase-30 - t*98;
+      const by = -34 - t*26;
+      ctx.fillRect(bx-9, by-14, 18, 16);
+    }
+    // shading + brick coursing on the wall
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(-wBase+2,0); ctx.lineTo(-wBase-16,-30); ctx.lineTo(-wBase-58,-58);
+    ctx.lineTo(-wBase-92,-64); ctx.lineTo(-wBase-138,-58); ctx.lineTo(-wBase-138,6);
+    ctx.closePath(); ctx.clip();
+    ctx.fillStyle = 'rgba(20,10,6,0.30)';
+    ctx.beginPath(); ctx.rect(-wBase-138,-70,120,80); ctx.fill();
+    ctx.strokeStyle = 'rgba(30,14,9,0.32)'; ctx.lineWidth = 1;
+    for(let i=0;i<8;i++){
+      const yy = 0 - i*10;
+      ctx.beginPath(); ctx.moveTo(-wBase-138,yy); ctx.lineTo(-wBase+2,yy); ctx.stroke();
+    }
+    ctx.restore();
+    // narrow arrow-slit in the wall
+    ctx.fillStyle = '#1c1210';
+    ctx.fillRect(-wBase-70,-40,4,18);
+
+    // stone plinth under the defensive wall
+    ctx.fillStyle = '#847e70';
+    ctx.beginPath(); ctx.ellipse(-wBase-78,10,62,14,0,0,7); ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawGranary(x,y){
+    ctx.save(); ctx.translate(x,y);
+    for(let i=0;i<3;i++){
+      const dead = i < (3-lives);
+      const ox = (i-1)*22, oy = -Math.abs(i-1)*4;
+      ctx.save(); ctx.translate(ox,oy);
+      ctx.fillStyle = dead ? '#4a4238' : '#b9924a';
+      ctx.strokeStyle = '#5c3f1c'; ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(-14,10); ctx.quadraticCurveTo(-16,-14,0,-20); ctx.quadraticCurveTo(16,-14,14,10);
+      ctx.quadraticCurveTo(0,18,-14,10); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = dead ? '#39332b' : '#8a6a2e';
+      ctx.beginPath(); ctx.moveTo(-6,-4); ctx.lineTo(6,-4); ctx.moveTo(-4,4); ctx.lineTo(6,4); ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  /* ============ Archer ============ */
+  function drawArcher(){
+    const ax = ARCHER_X(), ay = ARCHER_Y();
+    const ang = Math.atan2(pointer.y-ay, pointer.x-ax);
+    ctx.save();
+    ctx.translate(ax,ay);
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath(); ctx.ellipse(0,6,26,7,0,0,7); ctx.fill();
+    // legs
+    ctx.strokeStyle = '#3a2a1c'; ctx.lineWidth=7; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-6,0); ctx.lineTo(-10,-34); ctx.moveTo(6,0); ctx.lineTo(10,-34); ctx.stroke();
+    // body/tunic
+    ctx.fillStyle = '#5a3a24';
+    ctx.beginPath(); ctx.moveTo(-14,-34); ctx.lineTo(14,-34); ctx.lineTo(10,-72); ctx.lineTo(-10,-72); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#7a5230'; ctx.lineWidth=2; ctx.stroke();
+    // belt
+    ctx.fillStyle = '#2a1c12'; ctx.fillRect(-14,-46,28,5);
+    // head
+    ctx.fillStyle = '#d8a878';
+    ctx.beginPath(); ctx.arc(0,-84,12,0,7); ctx.fill();
+    // hood/cap
+    ctx.fillStyle = '#3a2a1c';
+    ctx.beginPath(); ctx.arc(0,-86,13,Math.PI,0); ctx.fill();
+
+    // arm & bow rotate toward pointer
+    ctx.save();
+    ctx.translate(2,-66);
+    ctx.rotate(ang);
+    ctx.strokeStyle = '#6b4a2e'; ctx.lineWidth = 5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.arc(18,0,20,-1.15,1.15); ctx.stroke();
+    ctx.strokeStyle = 'rgba(230,220,200,0.85)'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(18+20*Math.cos(-1.15), 20*Math.sin(-1.15));
+    ctx.lineTo(4,0);
+    ctx.lineTo(18+20*Math.cos(1.15), 20*Math.sin(1.15));
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  /* ============ Mice ============ */
+  function spawnMouse(){
+    const fromLeft = Math.random() < 0.5;
+    const roll = Math.random();
+    const isGold = roll < 0.08;
+    const isFast = !isGold && roll < 0.30;
+    const y = rand(GROUND_Y()-30, GROUND_Y()+22);
+    const speedBase = isGold ? rand(150,190) : isFast ? rand(120,155) : rand(60,95);
+    const speedMul = 1 + Math.min(elapsed/45000, 1.1); // ramps over ~45s
+    mice.push({
+      x: fromLeft ? -30 : W+30,
+      y,
+      dir: fromLeft ? 1 : -1,
+      speed: speedBase*speedMul,
+      isGold, isFast,
+      bob: Math.random()*10,
+      alive:true,
+      r: isGold ? 15 : 13,
+      wobblePhase: Math.random()*10,
+      caught:false,
+    });
+  }
+
+  function updateMice(dt){
+    for(const m of mice){
+      if(!m.alive) continue;
+      m.x += m.dir * m.speed * dt;
+      m.wobblePhase += dt*6;
+      m.y += Math.sin(m.wobblePhase + m.bob) * 6 * dt;
+      // reached granary?
+      if(Math.abs(m.x - CAPTURE_X()) < 26 && Math.abs(m.y-(GROUND_Y()+10)) < 60){
+        m.alive = false; m.caught = false; m.stole = true;
+        onGrainStolen(m);
+      }
+      // offscreen without reaching center (rare, just cleanup)
+      if(m.x < -60 || m.x > W+60){ m.alive = false; }
+    }
+    mice = mice.filter(m => m.alive || m.deathT !== undefined);
+  }
+
+  function drawMouse(m){
+    ctx.save();
+    ctx.translate(m.x, m.y);
+    const dir = m.dir;
+    const bodyColor = m.isGold ? '#f0c94a' : m.isFast ? '#7a5a44' : '#8a8378';
+    const earColor = m.isGold ? '#f7dc7a' : '#c79a8a';
+
+    if(m.isGold){
+      const glow = ctx.createRadialGradient(0,0,2,0,0,26);
+      glow.addColorStop(0,'rgba(255,224,120,0.55)');
+      glow.addColorStop(1,'rgba(255,224,120,0)');
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0,0,26,0,7); ctx.fill();
+    }
+
+    // tail
+    ctx.strokeStyle = bodyColor; ctx.lineWidth=2.4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-dir*12,2);
+    ctx.quadraticCurveTo(-dir*24, 10 + Math.sin(m.wobblePhase*2)*4, -dir*30, 0);
+    ctx.stroke();
+
+    // body
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath(); ctx.ellipse(0,0,m.r,m.r*0.72,0,0,7); ctx.fill();
+    // head
+    ctx.beginPath(); ctx.ellipse(dir*m.r*0.85,-2,m.r*0.55,m.r*0.48,0,0,7); ctx.fill();
+    // ears
+    ctx.fillStyle = earColor;
+    ctx.beginPath(); ctx.arc(dir*m.r*0.6,-m.r*0.8,4.2,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(dir*m.r*1.15,-m.r*0.75,4.2,0,7); ctx.fill();
+    // eye
+    ctx.fillStyle = '#211a12';
+    ctx.beginPath(); ctx.arc(dir*m.r*1.05,-3.5,1.6,0,7); ctx.fill();
+    // nose
+    ctx.fillStyle = '#c96a6a';
+    ctx.beginPath(); ctx.arc(dir*m.r*1.35,-1,1.6,0,7); ctx.fill();
+
+    ctx.restore();
+  }
+
+  /* ============ Enemy archers (obstacles — hitting one costs -20 pts) ============ */
+  function spawnRaider(){
+    const fromLeft = Math.random() < 0.5;
+    const y = rand(GROUND_Y()-24, GROUND_Y()+30);
+    const speed = rand(140,210) * (1 + Math.min(elapsed/60000, 0.6));
+    raiders.push({
+      x: fromLeft ? -34 : W+34,
+      y,
+      dir: fromLeft ? 1 : -1,
+      speed,
+      alive:true,
+      runPhase: Math.random()*10,
+    });
+  }
+
+  function updateRaiders(dt){
+    for(const r of raiders){
+      if(!r.alive) continue;
+      r.x += r.dir * r.speed * dt;
+      r.runPhase += dt*10;
+      if(r.x < -60 || r.x > W+60){ r.alive = false; }
+    }
+    raiders = raiders.filter(r=>r.alive);
+  }
+
+  function drawRaider(r){
+    ctx.save();
+    ctx.translate(r.x, r.y);
+    const dir = r.dir;
+    const swing = Math.sin(r.runPhase)*1;
+
+    // ground shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    ctx.beginPath(); ctx.ellipse(0,20,15,4.5,0,0,7); ctx.fill();
+
+    // legs (running stride)
+    ctx.strokeStyle = '#241f1c'; ctx.lineWidth=4.4; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(-2,4); ctx.lineTo(-2+dir*8*swing, 19);
+    ctx.moveTo(2,4); ctx.lineTo(2-dir*8*swing, 19);
+    ctx.stroke();
+
+    // cloak/tunic — dark, marks him as a hostile guard rather than prey
+    ctx.fillStyle = '#33302e';
+    ctx.beginPath();
+    ctx.moveTo(-9,4); ctx.lineTo(9,4); ctx.lineTo(6,-24); ctx.lineTo(-6,-24);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#8b2e2e'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(-6,-24); ctx.lineTo(-9,4); ctx.stroke();
+
+    // belt
+    ctx.fillStyle = '#171412'; ctx.fillRect(-9,-4,18,3.5);
+
+    // head + hood
+    ctx.fillStyle = '#c99a72';
+    ctx.beginPath(); ctx.arc(0,-30,7.5,0,7); ctx.fill();
+    ctx.fillStyle = '#2b2724';
+    ctx.beginPath(); ctx.arc(0,-31.5,8.2,Math.PI,0); ctx.fill();
+
+    // bow held out front
+    ctx.save();
+    ctx.translate(dir*7,-16);
+    ctx.rotate(dir*0.5);
+    ctx.strokeStyle = '#4a3620'; ctx.lineWidth=3; ctx.lineCap='round';
+    ctx.beginPath(); ctx.arc(0,0,11,-1.2,1.2); ctx.stroke();
+    ctx.strokeStyle='rgba(220,210,195,0.8)'; ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(11*Math.cos(-1.2),11*Math.sin(-1.2));
+    ctx.lineTo(2,0);
+    ctx.lineTo(11*Math.cos(1.2),11*Math.sin(1.2));
+    ctx.stroke();
+    ctx.restore();
+
+    // small warning skull-mark above head so the threat reads clearly at a glance
+    ctx.fillStyle = 'rgba(196,74,62,0.95)';
+    ctx.beginPath(); ctx.arc(0,-44,4.4,0,7); ctx.fill();
+    ctx.fillStyle = '#1c1512';
+    ctx.beginPath(); ctx.arc(-1.5,-45,0.9,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(1.5,-45,0.9,0,7); ctx.fill();
+
+    ctx.restore();
+  }
+
+  function onRaiderHit(r, hx, hy){
+    r.alive = false;
+    combo = 0;
+    score = Math.max(0, score - 20);
+    scoreVal.textContent = score;
+    sfx.penalty();
+    spawnBurst(hx, hy, '#c24a3e', null, true);
+    particles.push({x:hx,y:hy,vx:0,vy:-40,life:1.3,color:'#ff8a7a',text:'-20', isText:true});
+  }
+
+  /* ============ Arrows ============ */
+  function shootAt(tx,ty){
+    const ax = ARCHER_X(), ay = ARCHER_Y()-66;
+    const dx = tx-ax, dy = ty-ay;
+    const len = Math.hypot(dx,dy) || 1;
+    const speed = 900;
+    arrows.push({ x:ax, y:ay, px:ax, py:ay, vx:dx/len*speed, vy:dy/len*speed, angle:Math.atan2(dy,dx), alive:true });
+    sfx.shoot();
+  }
+
+  function updateArrows(dt){
+    for(const a of arrows){
+      if(!a.alive) continue;
+      a.px = a.x; a.py = a.y;
+      a.x += a.vx*dt; a.y += a.vy*dt;
+      // collision vs mice (segment vs circle, approx via point sampling)
+      for(const m of mice){
+        if(!m.alive) continue;
+        const d = distToSeg(m.x,m.y,a.px,a.py,a.x,a.y);
+        if(d < m.r+4){
+          a.alive = false;
+          killMouse(m, a.x, a.y);
+          break;
+        }
+      }
+      // collision vs enemy archers — hitting one costs points, not helps
+      if(a.alive){
+        for(const r of raiders){
+          if(!r.alive) continue;
+          const d = distToSeg(r.x,r.y-16,a.px,a.py,a.x,a.y);
+          if(d < 16){
+            a.alive = false;
+            onRaiderHit(r, a.x, a.y);
+            break;
+          }
+        }
+      }
+      if(a.x<-40||a.x>W+40||a.y<-40||a.y>H+40) a.alive=false;
+    }
+    arrows = arrows.filter(a=>a.alive);
+  }
+
+  function distToSeg(px,py,x1,y1,x2,y2){
+    const dx=x2-x1, dy=y2-y1;
+    const l2 = dx*dx+dy*dy;
+    if(l2===0) return Math.hypot(px-x1,py-y1);
+    let t = ((px-x1)*dx+(py-y1)*dy)/l2;
+    t = clamp(t,0,1);
+    const cx = x1+t*dx, cy = y1+t*dy;
+    return Math.hypot(px-cx,py-cy);
+  }
+
+  /* ============ Scoring / events ============ */
+  function killMouse(m, hx, hy){
+    m.alive = false;
+    if(state !== STATE.PLAY){
+      // idle attract-mode: purely visual, no scoring
+      spawnBurst(hx,hy, m.isGold ? '#f7dc7a' : '#c9b48c', null);
+      return;
+    }
+    combo++;
+    bestCombo = Math.max(bestCombo, combo);
+    kills++;
+    const base = m.isGold ? 50 : m.isFast ? 15 : 10;
+    const mult = 1 + Math.floor(combo/5)*0.5;
+    const pts = Math.round(base*mult);
+    score += pts;
+    scoreVal.textContent = score;
+    if(m.isGold) sfx.gold(); else sfx.hit();
+    spawnBurst(hx,hy, m.isGold ? '#f7dc7a' : '#c9b48c', pts);
+    flashCombo();
+  }
+
+  function onGrainStolen(m){
+    if(state !== STATE.PLAY){
+      // idle attract-mode: mouse just vanishes, no life lost
+      spawnBurst(m.x, m.y, '#8a6a2e', null, true);
+      return;
+    }
+    lives = Math.max(0, lives-1);
+    combo = 0;
+    sfx.steal();
+    spawnBurst(m.x, m.y, '#8a6a2e', null, true);
+    renderSacks();
+    if(lives<=0){ endGame(true); }
+  }
+
+  function flashCombo(){
+    if(combo >= 3){
+      comboEl.textContent = `Seria ×${combo}!`;
+      comboEl.style.opacity = '1';
+      clearTimeout(flashCombo._t);
+      flashCombo._t = setTimeout(()=>{ comboEl.style.opacity='0'; }, 700);
+    }
+  }
+
+  function spawnBurst(x,y,color,pts,steal){
+    for(let i=0;i<(steal?10:12);i++){
+      const ang = Math.random()*Math.PI*2;
+      const spd = rand(40,140);
+      particles.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd - (steal?0:60),life:1,color,steal});
+    }
+    if(pts){
+      particles.push({x,y,vx:0,vy:-40,life:1.3,color:'#fff6d8',text:`+${pts}`, isText:true});
+    }
+  }
+
+  function updateParticles(dt){
+    for(const p of particles){
+      p.x += p.vx*dt; p.y += p.vy*dt; p.vy += (p.isText?20:220)*dt;
+      p.life -= dt*(p.isText?0.9:1.6);
+    }
+    particles = particles.filter(p=>p.life>0);
+  }
+
+  function drawParticles(){
+    for(const p of particles){
+      ctx.globalAlpha = clamp(p.life,0,1);
+      if(p.isText){
+        ctx.font = "600 20px 'Cinzel', serif";
+        ctx.fillStyle = p.color; ctx.textAlign='center';
+        ctx.fillText(p.text, p.x, p.y);
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x,p.y, p.steal?4:3, 0, 7); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function renderSacks(){
+    sacksEl.innerHTML = '';
+    for(let i=0;i<3;i++){
+      const d = document.createElement('div');
+      d.className = 'sack' + (i < (3-lives) ? ' lost' : '');
+      sacksEl.appendChild(d);
+    }
+  }
+
+  /* ============ Crosshair ============ */
+  function drawCrosshair(){
+    if(!pointer.active) return;
+    const {x,y} = pointer;
+    ctx.strokeStyle = 'rgba(230,200,140,0.85)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(x,y,12,0,7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x-18,y); ctx.lineTo(x-6,y); ctx.moveTo(x+6,y); ctx.lineTo(x+18,y);
+    ctx.moveTo(x,y-18); ctx.lineTo(x,y-6); ctx.moveTo(x,y+6); ctx.lineTo(x,y+18);
+    ctx.stroke();
+  }
+
+  function drawArrowsShapes(){
+    for(const a of arrows){
+      ctx.save();
+      ctx.translate(a.x,a.y); ctx.rotate(a.angle);
+      ctx.strokeStyle = '#3a2a1c'; ctx.lineWidth=2.4; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-16,0); ctx.lineTo(4,0); ctx.stroke();
+      ctx.fillStyle = '#c9a24b';
+      ctx.beginPath(); ctx.moveTo(10,0); ctx.lineTo(2,-3.5); ctx.lineTo(2,3.5); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#8a8378'; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.moveTo(-16,0); ctx.lineTo(-22,-3); ctx.moveTo(-16,0); ctx.lineTo(-22,3); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /* ============ Idle attract-mode (archer shoots on its own until PLAY is pressed) ============ */
+  function updateIdleDemo(dt){
+    idleSpawnTimer -= dt*1000;
+    if(idleSpawnTimer <= 0){ spawnMouse(); idleSpawnTimer = rand(900,1600); }
+
+    updateMice(dt);
+    updateArrows(dt);
+
+    // find nearest live mouse and aim/shoot at it automatically
+    let target = null, bestDist = Infinity;
+    for(const m of mice){
+      if(!m.alive) continue;
+      const d = Math.abs(m.x - ARCHER_X());
+      if(d < bestDist){ bestDist = d; target = m; }
+    }
+    if(target){
+      pointer.x += (target.x - pointer.x) * Math.min(1, dt*6);
+      pointer.y += (target.y - pointer.y) * Math.min(1, dt*6);
+      pointer.active = true;
+      idleShootTimer -= dt*1000;
+      if(idleShootTimer <= 0){
+        shootAt(target.x, target.y);
+        idleShootTimer = rand(650,1100);
+      }
+    } else {
+      pointer.active = false;
+      idleShootTimer = Math.min(idleShootTimer, 300);
+    }
+  }
+
+  /* ============ Main loop ============ */
+  function frame(ts){
+    if(!lastTs) lastTs = ts;
+    let dt = (ts-lastTs)/1000; lastTs = ts;
+    dt = Math.min(dt, 0.05);
+    elapsed += dt*1000;
+
+    if(state === STATE.PLAY){
+      spawnTimer -= dt*1000;
+      const spawnInterval = Math.max(1500 - elapsed*0.02, 480);
+      if(spawnTimer <= 0){ spawnMouse(); spawnTimer = spawnInterval * rand(0.7,1.15); }
+
+      raiderSpawnTimer -= dt*1000;
+      const raiderInterval = Math.max(3200 - elapsed*0.03, 1900);
+      if(raiderSpawnTimer <= 0){ spawnRaider(); raiderSpawnTimer = raiderInterval * rand(0.8,1.3); }
+
+      updateMice(dt);
+      updateRaiders(dt);
+      updateArrows(dt);
+      updateParticles(dt);
+
+      timeLeft -= dt;
+      if(timeLeft <= 0){ timeLeft = 0; endGame(false); }
+      timeVal.textContent = Math.ceil(timeLeft);
+    } else if(state === STATE.MENU){
+      updateIdleDemo(dt);
+      updateParticles(dt);
+    } else {
+      updateParticles(dt);
+    }
+
+    ctx.clearRect(0,0,W,H);
+    drawBackground();
+    for(const m of mice) if(m.alive) drawMouse(m);
+    for(const r of raiders) if(r.alive) drawRaider(r);
+    drawArrowsShapes();
+    drawParticles();
+    if(state===STATE.PLAY || state===STATE.MENU) drawArcher();
+    if(state===STATE.PLAY) drawCrosshair();
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  /* ============ Input ============ */
+  function setPointerFromEvent(e){
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    pointer.x = cx; pointer.y = cy; pointer.active = true;
+  }
+  canvas.addEventListener('mousemove', (e)=>{ if(state===STATE.PLAY) setPointerFromEvent(e); });
+  canvas.addEventListener('touchmove', (e)=>{ if(state===STATE.PLAY) setPointerFromEvent(e); }, {passive:true});
+  canvas.addEventListener('mousedown', (e)=>{
+    setPointerFromEvent(e);
+    if(state===STATE.PLAY) shootAt(pointer.x,pointer.y);
+  });
+  canvas.addEventListener('touchstart', (e)=>{
+    setPointerFromEvent(e);
+    if(state===STATE.PLAY) shootAt(pointer.x,pointer.y);
+  }, {passive:true});
+  window.addEventListener('keydown', (e)=>{
+    if(e.code==='Space' && state===STATE.PLAY && pointer.active){
+      e.preventDefault(); shootAt(pointer.x,pointer.y);
+    }
+  });
+
+  /* ============ Flow control ============ */
+  function startGame(){
+    nickname = (nickInput.value || 'Łowca').trim().slice(0,16) || 'Łowca';
+    score = 0; timeLeft = 60; lives = 3; combo = 0; bestCombo = 0; kills = 0;
+    elapsed = 0; spawnTimer = 300; mice=[]; arrows=[]; particles=[];
+    raiders=[]; raiderSpawnTimer = 2600;
+    scoreVal.textContent='0'; timeVal.textContent='60';
+    renderSacks();
+    menuScreen.classList.add('hidden');
+    nicknameModal.classList.add('hidden');
+    overScreen.classList.add('hidden');
+    hud.classList.remove('hidden');
+    cloudBoard.classList.remove('hidden');
+    loadTopScores();
+    state = STATE.PLAY;
+    sfx.start();
+    requestAnimationFrame(positionCloudBoard);
+    setTimeout(positionCloudBoard, 150);
+    setTimeout(positionCloudBoard, 500);
+    setTimeout(positionCloudBoard, 1000);
+  }
+
+  function positionCloudBoard(){
+    if(!hud || !cloudBoard) return;
+    if(hud.classList.contains('hidden')) return;
+    const rect = hud.getBoundingClientRect();
+    cloudBoard.style.top = Math.round(rect.bottom + 12) + 'px';
+  }
+  window.addEventListener('resize', positionCloudBoard);
+  window.addEventListener('orientationchange', ()=> requestAnimationFrame(positionCloudBoard));
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(positionCloudBoard).catch(()=>{});
+  }
+  if(window.ResizeObserver){
+    const hudResizeObserver = new ResizeObserver(()=> positionCloudBoard());
+    hudResizeObserver.observe(hud);
+  }
+
+  function endGame(byLoss){
+    state = STATE.OVER;
+    hud.classList.add('hidden');
+    cloudBoard.classList.add('hidden');
+    sfx.over();
+    const overTitle = document.getElementById('overTitle');
+    const overText = document.getElementById('overText');
+    const overEyebrow = document.getElementById('overEyebrow');
+    if(byLoss){
+      overEyebrow.textContent = 'Klęska nad Gopłem';
+      overTitle.textContent = 'Myszy zdobyły spichlerz!';
+      overText.textContent = `Tak jak niegdyś księcia Popiela, ziarno Kruszwicy pochłonęły gryzonie. Upolowałeś ${kills} myszy i zdobyłeś ${score} pkt, zanim padł ostatni worek.`;
+    } else {
+      overEyebrow.textContent = 'Zmierzch zapadł nad jeziorem';
+      overTitle.textContent = 'Spichlerz ocalał!';
+      overText.textContent = `Obroniłeś ziarno Kruszwicy do końca nocy. Upolowałeś ${kills} myszy, najlepsza seria: ×${bestCombo}.`;
+    }
+    document.getElementById('leaderboard').innerHTML = '<tr><td style="color:#7a5a3a; font-style:italic;">Zapisywanie wyniku…</td></tr>';
+    saveScore();
+    overScreen.classList.remove('hidden');
+  }
+
+  /* ============ Leaderboard (server-side wynik.txt via Vercel Blob) ============ */
+  let lastRun = null; // {name, score} of the run just finished, for "me" highlight
+
+  async function saveScore(){
+    lastRun = { name: nickname, score: score };
+    try{
+      const res = await fetch('/api/save-score', {
+        method:'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nickname, score: score })
+      });
+      const data = await res.json();
+      if(!data || !data.ok){
+        console.warn('Serwer odrzucił zapis wyniku:', data && data.error);
+      }
+    }catch(e){
+      console.warn('Nie udało się zapisać wyniku na serwerze (wynik.txt):', e);
+    }
+    await loadTopScores();
+  }
+
+  async function loadTopScores(){
+    let top = null;
+    try{
+      const res = await fetch('/api/top-scores', { cache:'no-store' });
+      const data = await res.json();
+      if(data && data.ok) top = data.top;
+    }catch(e){
+      console.warn('Nie udało się pobrać wyników z serwera (/api/top-scores):', e);
+    }
+    renderCloudBoard(top);
+    renderLeaderboard(top);
+  }
+
+  function renderCloudBoard(top){
+    cloudBoard.innerHTML = '';
+    if(top === null){
+      const t = document.createElement('div');
+      t.className = 'cb-title';
+      t.textContent = 'Top Łowcy';
+      cloudBoard.appendChild(t);
+      const d = document.createElement('div');
+      d.className = 'score-row empty';
+      d.textContent = 'brak połączenia z serwerem';
+      cloudBoard.appendChild(d);
+      return;
+    }
+    if(top.length === 0){
+      const t = document.createElement('div');
+      t.className = 'cb-title';
+      t.textContent = 'Top Łowcy';
+      cloudBoard.appendChild(t);
+      const d = document.createElement('div');
+      d.className = 'score-row empty';
+      d.textContent = 'brak wyników';
+      cloudBoard.appendChild(d);
+      return;
+    }
+    let meMarked = false;
+    top.forEach((e,i)=>{
+      const isMe = !meMarked && lastRun && e.name===lastRun.name && e.score===lastRun.score;
+      if(isMe) meMarked = true;
+      const d = document.createElement('div');
+      d.className = 'score-row' + (isMe ? ' me' : '');
+      const titleSpan = i===0 ? '<span class="cb-title-inline">Top Łowcy</span>' : '';
+      d.innerHTML = `${titleSpan}<span class="cb-rank">${i+1}.</span>${escapeHtml(e.name)}<span class="cb-score">${e.score}</span>`;
+      cloudBoard.appendChild(d);
+    });
+  }
+
+  function renderLeaderboard(top){
+    const tbl = document.getElementById('leaderboard');
+    if(top === null){
+      tbl.innerHTML = '<tr><td style="color:#7a5a3a;">Brak połączenia z serwerem — nie udało się wczytać wyników.</td></tr>';
+      return;
+    }
+    if(top.length===0){ tbl.innerHTML=''; return; }
+    let meMarked = false;
+    tbl.innerHTML = '<tr><td colspan="3" style="font-family:\'Cinzel\',serif; font-size:11px; letter-spacing:.1em; color:#6b4e1c; padding-top:10px;">NAJLEPSI ŁOWCY KRUSZWICY</td></tr>' +
+      top.map((e,i)=>{
+        const isMe = !meMarked && lastRun && e.name===lastRun.name && e.score===lastRun.score;
+        if(isMe) meMarked = true;
+        return `<tr class="${isMe?'me':''}"><td class="rank">${i+1}.</td><td>${escapeHtml(e.name)}</td><td style="text-align:right; font-weight:600;">${e.score}</td></tr>`;
+      }).join('');
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function returnToIdle(){
+    state = STATE.MENU;
+    mice = []; arrows = []; particles = []; raiders = [];
+    pointer.active = false;
+    elapsed = 0; idleSpawnTimer = 0; idleShootTimer = 600;
+    menuScreen.classList.remove('hidden');
+    nicknameModal.classList.add('hidden');
+    cloudBoard.classList.remove('hidden');
+    loadTopScores();
+  }
+
+  playBtn.addEventListener('click', ()=>{
+    menuScreen.classList.add('hidden');
+    nicknameModal.classList.remove('hidden');
+  });
+  modalCloseBtn.addEventListener('click', ()=>{
+    nicknameModal.classList.add('hidden');
+    if(state === STATE.MENU) menuScreen.classList.remove('hidden');
+  });
+  nicknameModal.addEventListener('click', (e)=>{
+    if(e.target === nicknameModal){
+      nicknameModal.classList.add('hidden');
+      if(state === STATE.MENU) menuScreen.classList.remove('hidden');
+    }
+  });
+  startBtn.addEventListener('click', startGame);
+  nickInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') startGame(); });
+  againBtn.addEventListener('click', ()=>{
+    overScreen.classList.add('hidden');
+    returnToIdle();
+  });
+
+  renderSacks();
+  loadTopScores();
+  // initial idle background render loop already runs via requestAnimationFrame
+
+})();
+</script>
+</body>
+</html>
