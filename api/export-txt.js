@@ -1,3 +1,6 @@
+// /api/export-txt.js
+// Zwraca surową zawartość wynik.txt jako plik do pobrania.
+
 import { list } from '@vercel/blob';
 
 export default async function handler(req, res) {
