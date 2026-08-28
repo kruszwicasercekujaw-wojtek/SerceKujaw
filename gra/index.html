@@ -1061,7 +1061,17 @@
     loadTopScores();
     state = STATE.PLAY;
     sfx.start();
+    requestAnimationFrame(positionCloudBoard);
   }
+
+  function positionCloudBoard(){
+    if(!hud || !cloudBoard) return;
+    if(hud.classList.contains('hidden')) return;
+    const rect = hud.getBoundingClientRect();
+    cloudBoard.style.top = Math.round(rect.bottom + 10) + 'px';
+  }
+  window.addEventListener('resize', positionCloudBoard);
+  window.addEventListener('orientationchange', ()=> requestAnimationFrame(positionCloudBoard));
 
   function endGame(byLoss){
     state = STATE.OVER;
