@@ -1,18 +1,19 @@
 // /api/top-scores.js
-// Funkcja serwerowa Vercel — czyta wynik.txt z Vercel Blob Storage
+// Funkcja serwerowa Vercel — czyta wynik.txt z prywatnego Vercel Blob Storage
 // i zwraca 5 najlepszych wyników jako JSON.
 
-import { list } from '@vercel/blob';
+import { get } from '@vercel/blob';
 
 export default async function handler(req, res) {
   try {
-    const { blobs } = await list({ prefix: 'wynik.txt' });
-    const existing = blobs.find(b => b.pathname === 'wynik.txt');
-
     let text = '';
-    if (existing) {
-      const r = await fetch(existing.url, { cache: 'no-store' });
-      text = await r.text();
+    try {
+      const result = await get('wynik.txt', { access: 'private', useCache: false });
+      if (result && result.stream) {
+        text = await new Response(result.stream).text();
+      }
+    } catch (e) {
+      // Plik jeszcze nie istnieje — brak wyników, to nie jest błąd.
     }
 
     const scores = text
