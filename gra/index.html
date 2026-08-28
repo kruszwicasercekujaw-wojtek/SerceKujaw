@@ -160,6 +160,10 @@
     font-family:'Cinzel',serif; font-size:11px; letter-spacing:.18em; text-transform:uppercase;
     color:#ffffff; text-shadow:0 2px 6px rgba(0,0,0,0.75); margin-bottom:4px; opacity:.9;
   }
+  .cb-title-inline{
+    font-family:'Cinzel',serif; font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+    color:#ffe9b0; opacity:.85; margin-right:10px;
+  }
   .score-row{
     font-family:'EB Garamond', serif;
     font-size:15px;
@@ -177,6 +181,7 @@
     #cloudBoard{ top:105px; right:10px; gap:2px; max-width:56vw; }
     .score-row{ font-size:12.5px; }
     #cloudBoard .cb-title{ font-size:9px; }
+    .cb-title-inline{ font-size:8.5px; margin-right:6px; }
   }
 
   .btn.txt-export{
@@ -212,9 +217,7 @@
     </div>
   </div>
   <div id="combo"></div>
-  <div id="cloudBoard" class="hidden">
-    <div class="cb-title">Top Łowcy</div>
-  </div>
+  <div id="cloudBoard" class="hidden"></div>
 
   <!-- Menu -->
   <div class="overlay" id="menuScreen">
@@ -232,7 +235,6 @@
       <input id="nickInput" type="text" maxlength="16" placeholder="np. Piast" autocomplete="off">
       <div>
         <button class="btn" id="startBtn">Rozpocznij łowy</button>
-        <button class="btn txt-export" id="exportBtnMenu" type="button">Pobierz wyniki (.txt)</button>
       </div>
       <p class="hint">Celuj w myszy/ palcem, kliknij lub dotknij cel, by wypuścić strzałę. Omijaj łuczników - nie są celem!</p>
     </div>
@@ -247,7 +249,6 @@
       <table id="leaderboard"></table>
       <div style="text-align:center;">
         <button class="btn" id="againBtn">Zapoluj ponownie</button>
-        <button class="btn txt-export" id="exportBtnOver" type="button">Pobierz wyniki (.txt)</button>
       </div>
     </div>
   </div>
@@ -272,8 +273,6 @@
   const sacksEl = document.getElementById('sacks');
   const comboEl = document.getElementById('combo');
   const cloudBoard = document.getElementById('cloudBoard');
-  const exportBtnMenu = document.getElementById('exportBtnMenu');
-  const exportBtnOver = document.getElementById('exportBtnOver');
 
   let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
 
@@ -1140,8 +1139,12 @@
   }
 
   function renderCloudBoard(top){
-    cloudBoard.querySelectorAll('.score-row').forEach(el=>el.remove());
+    cloudBoard.innerHTML = '';
     if(top === null){
+      const t = document.createElement('div');
+      t.className = 'cb-title';
+      t.textContent = 'Top Łowcy';
+      cloudBoard.appendChild(t);
       const d = document.createElement('div');
       d.className = 'score-row empty';
       d.textContent = 'brak połączenia z serwerem';
@@ -1149,6 +1152,10 @@
       return;
     }
     if(top.length === 0){
+      const t = document.createElement('div');
+      t.className = 'cb-title';
+      t.textContent = 'Top Łowcy';
+      cloudBoard.appendChild(t);
       const d = document.createElement('div');
       d.className = 'score-row empty';
       d.textContent = 'brak wyników';
@@ -1161,7 +1168,8 @@
       if(isMe) meMarked = true;
       const d = document.createElement('div');
       d.className = 'score-row' + (isMe ? ' me' : '');
-      d.innerHTML = `<span class="cb-rank">${i+1}.</span>${escapeHtml(e.name)}<span class="cb-score">${e.score}</span>`;
+      const titleSpan = i===0 ? '<span class="cb-title-inline">Top Łowcy</span>' : '';
+      d.innerHTML = `${titleSpan}<span class="cb-rank">${i+1}.</span>${escapeHtml(e.name)}<span class="cb-score">${e.score}</span>`;
       cloudBoard.appendChild(d);
     });
   }
@@ -1186,24 +1194,6 @@
     return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  async function exportScoresTxt(){
-    try{
-      const res = await fetch('/api/export-txt', { cache:'no-store' });
-      if(!res.ok) throw new Error('brak pliku wynik.txt');
-      const text = await res.text();
-      const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'wynik.txt';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }catch(e){
-      alert('Nie udało się pobrać pliku wynik.txt z serwera.');
-    }
-  }
-
-  exportBtnMenu.addEventListener('click', exportScoresTxt);
-  exportBtnOver.addEventListener('click', exportScoresTxt);
   startBtn.addEventListener('click', startGame);
   nickInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') startGame(); });
   againBtn.addEventListener('click', ()=>{
