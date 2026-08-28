@@ -44,6 +44,7 @@
   .hidden{ display:none !important; }
 
   .plaque{
+    position:relative;
     background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
     border:3px solid var(--wood);
     box-shadow: 0 0 0 6px var(--wood-dark), 0 20px 50px rgba(0,0,0,0.55), inset 0 0 30px rgba(74,46,30,0.25);
@@ -52,6 +53,45 @@
     max-width:520px;
     width:92%;
     color:var(--ink);
+  }
+  .modal-close{
+    position:absolute; top:8px; right:10px;
+    width:30px; height:30px; border-radius:50%;
+    border:none; background:rgba(74,46,30,0.12);
+    color:var(--wood); font-family:'Cinzel',serif; font-size:18px; line-height:1;
+    cursor:pointer;
+  }
+  .modal-close:hover{ background:rgba(74,46,30,0.22); }
+
+  /* ---------- Attract-mode CTA (idle screen, board visible behind) ---------- */
+  .cta-wrap{
+    position:absolute; inset:0; z-index:6;
+    display:flex; align-items:flex-end; justify-content:center;
+    padding-bottom:7vh; pointer-events:none;
+  }
+  .cta-box{
+    pointer-events:auto;
+    text-align:center;
+    background:linear-gradient(180deg, rgba(42,29,18,0.85), rgba(20,13,7,0.88));
+    border:1px solid var(--gold);
+    border-radius:10px;
+    padding:20px 36px 26px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    animation: fadeIn .6s ease;
+  }
+  .cta-box .eyebrow{ color:var(--gold-bright); opacity:.9; }
+  .cta-title{
+    font-family:'Cinzel', serif;
+    font-size:clamp(20px, 4vw, 30px);
+    margin:0 0 16px;
+    line-height:1.2;
+    color:var(--parchment);
+    text-shadow:0 2px 10px rgba(0,0,0,0.6);
+  }
+  #playBtn{ font-size:20px; padding:16px 48px; margin-top:0; }
+  @media (max-width:520px){
+    .cta-box{ padding:16px 22px 20px; }
+    #playBtn{ font-size:17px; padding:14px 36px; }
   }
   .eyebrow{
     font-family:'Cinzel', serif;
@@ -211,13 +251,23 @@
     </div>
   </div>
   <div id="combo"></div>
-  <div id="cloudBoard" class="hidden"></div>
+  <div id="cloudBoard"></div>
 
-  <!-- Menu -->
-  <div class="overlay" id="menuScreen">
-    <div class="plaque">
+  <!-- Idle attract-mode screen: game board + top-5 visible behind, archer auto-shoots until PLAY -->
+  <div class="cta-wrap" id="menuScreen">
+    <div class="cta-box">
       <p class="eyebrow">Rok Pański 965, gród nad jeziorem Gopło</p>
-      <h1>Kruszwica<br>Polowanie Na Myszy</h1>
+      <h1 class="cta-title">Kruszwica<br>Polowanie Na Myszy</h1>
+      <button class="btn" id="playBtn">▶ Graj</button>
+    </div>
+  </div>
+
+  <!-- Nickname popup: opens after pressing PLAY, must be filled before real hunt starts -->
+  <div class="overlay hidden" id="nicknameModal">
+    <div class="plaque">
+      <button class="modal-close" id="modalCloseBtn" aria-label="Zamknij">×</button>
+      <p class="eyebrow">Rok Pański 965, gród nad jeziorem Gopło</p>
+      <h1>Zanim ruszysz na łowy</h1>
       <p class="legend">
         Legenda głosi, że w Mysiej Wieży na wyspie ukarano niegdyś okrutnego księcia Popiela -
         zjedzony został żywcem przez myszy. Odtąd co roku, gdy zapada zmierzch nad Gopłem,
@@ -230,7 +280,7 @@
       <div>
         <button class="btn" id="startBtn">Rozpocznij łowy</button>
       </div>
-      <p class="hint">Celuj w myszy/ palcem, kliknij lub dotknij cel, by wypuścić strzałę. Omijaj łuczników - nie są celem!</p>
+      <p class="hint">Celuj palcem, kliknij lub dotknij cel, by wypuścić strzałę. Omijaj łuczników - nie są celem!</p>
     </div>
   </div>
 
@@ -257,10 +307,13 @@
   const ctx = canvas.getContext('2d');
   const stage = document.getElementById('stage');
   const menuScreen = document.getElementById('menuScreen');
+  const nicknameModal = document.getElementById('nicknameModal');
   const overScreen = document.getElementById('overScreen');
   const hud = document.getElementById('hud');
   const nickInput = document.getElementById('nickInput');
+  const playBtn = document.getElementById('playBtn');
   const startBtn = document.getElementById('startBtn');
+  const modalCloseBtn = document.getElementById('modalCloseBtn');
   const againBtn = document.getElementById('againBtn');
   const scoreVal = document.getElementById('scoreVal');
   const timeVal = document.getElementById('timeVal');
@@ -312,6 +365,7 @@
   let raiders = [], raiderSpawnTimer = 2600;
   let pointer = { x: 0, y: 0, active:false };
   let lastTs = 0;
+  let idleSpawnTimer = 0, idleShootTimer = 600;
 
   const GROUND_Y = () => H*0.66;      // path where mice run
   const CAPTURE_X = () => W/2;        // granary position
@@ -876,6 +930,11 @@
   /* ============ Scoring / events ============ */
   function killMouse(m, hx, hy){
     m.alive = false;
+    if(state !== STATE.PLAY){
+      // idle attract-mode: purely visual, no scoring
+      spawnBurst(hx,hy, m.isGold ? '#f7dc7a' : '#c9b48c', null);
+      return;
+    }
     combo++;
     bestCombo = Math.max(bestCombo, combo);
     kills++;
@@ -890,6 +949,11 @@
   }
 
   function onGrainStolen(m){
+    if(state !== STATE.PLAY){
+      // idle attract-mode: mouse just vanishes, no life lost
+      spawnBurst(m.x, m.y, '#8a6a2e', null, true);
+      return;
+    }
     lives = Math.max(0, lives-1);
     combo = 0;
     sfx.steal();
@@ -975,6 +1039,36 @@
     }
   }
 
+  /* ============ Idle attract-mode (archer shoots on its own until PLAY is pressed) ============ */
+  function updateIdleDemo(dt){
+    idleSpawnTimer -= dt*1000;
+    if(idleSpawnTimer <= 0){ spawnMouse(); idleSpawnTimer = rand(900,1600); }
+
+    updateMice(dt);
+    updateArrows(dt);
+
+    // find nearest live mouse and aim/shoot at it automatically
+    let target = null, bestDist = Infinity;
+    for(const m of mice){
+      if(!m.alive) continue;
+      const d = Math.abs(m.x - ARCHER_X());
+      if(d < bestDist){ bestDist = d; target = m; }
+    }
+    if(target){
+      pointer.x += (target.x - pointer.x) * Math.min(1, dt*6);
+      pointer.y += (target.y - pointer.y) * Math.min(1, dt*6);
+      pointer.active = true;
+      idleShootTimer -= dt*1000;
+      if(idleShootTimer <= 0){
+        shootAt(target.x, target.y);
+        idleShootTimer = rand(650,1100);
+      }
+    } else {
+      pointer.active = false;
+      idleShootTimer = Math.min(idleShootTimer, 300);
+    }
+  }
+
   /* ============ Main loop ============ */
   function frame(ts){
     if(!lastTs) lastTs = ts;
@@ -999,6 +1093,9 @@
       timeLeft -= dt;
       if(timeLeft <= 0){ timeLeft = 0; endGame(false); }
       timeVal.textContent = Math.ceil(timeLeft);
+    } else if(state === STATE.MENU){
+      updateIdleDemo(dt);
+      updateParticles(dt);
     } else {
       updateParticles(dt);
     }
@@ -1009,7 +1106,7 @@
     for(const r of raiders) if(r.alive) drawRaider(r);
     drawArrowsShapes();
     drawParticles();
-    if(state===STATE.PLAY) drawArcher();
+    if(state===STATE.PLAY || state===STATE.MENU) drawArcher();
     if(state===STATE.PLAY) drawCrosshair();
 
     requestAnimationFrame(frame);
@@ -1023,8 +1120,8 @@
     const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
     pointer.x = cx; pointer.y = cy; pointer.active = true;
   }
-  canvas.addEventListener('mousemove', (e)=>{ setPointerFromEvent(e); });
-  canvas.addEventListener('touchmove', (e)=>{ setPointerFromEvent(e); }, {passive:true});
+  canvas.addEventListener('mousemove', (e)=>{ if(state===STATE.PLAY) setPointerFromEvent(e); });
+  canvas.addEventListener('touchmove', (e)=>{ if(state===STATE.PLAY) setPointerFromEvent(e); }, {passive:true});
   canvas.addEventListener('mousedown', (e)=>{
     setPointerFromEvent(e);
     if(state===STATE.PLAY) shootAt(pointer.x,pointer.y);
@@ -1048,6 +1145,7 @@
     scoreVal.textContent='0'; timeVal.textContent='60';
     renderSacks();
     menuScreen.classList.add('hidden');
+    nicknameModal.classList.add('hidden');
     overScreen.classList.add('hidden');
     hud.classList.remove('hidden');
     cloudBoard.classList.remove('hidden');
@@ -1188,15 +1286,36 @@
     return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  function returnToIdle(){
+    state = STATE.MENU;
+    mice = []; arrows = []; particles = []; raiders = [];
+    pointer.active = false;
+    elapsed = 0; idleSpawnTimer = 0; idleShootTimer = 600;
+    menuScreen.classList.remove('hidden');
+    nicknameModal.classList.add('hidden');
+    cloudBoard.classList.remove('hidden');
+    loadTopScores();
+  }
+
+  playBtn.addEventListener('click', ()=>{
+    nicknameModal.classList.remove('hidden');
+    nickInput.focus();
+  });
+  modalCloseBtn.addEventListener('click', ()=>{
+    nicknameModal.classList.add('hidden');
+  });
+  nicknameModal.addEventListener('click', (e)=>{
+    if(e.target === nicknameModal) nicknameModal.classList.add('hidden');
+  });
   startBtn.addEventListener('click', startGame);
   nickInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') startGame(); });
   againBtn.addEventListener('click', ()=>{
     overScreen.classList.add('hidden');
-    menuScreen.classList.remove('hidden');
-    nickInput.focus();
+    returnToIdle();
   });
 
   renderSacks();
+  loadTopScores();
   // initial idle background render loop already runs via requestAnimationFrame
 
 })();
