@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Kruszwica-Polowanie Na Myszy</title>
+<title>Kruszwica — Polowanie Na Myszy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -219,9 +219,9 @@
       <p class="eyebrow">Rok Pański 965, gród nad jeziorem Gopło</p>
       <h1>Kruszwica<br>Polowanie Na Myszy</h1>
       <p class="legend">
-        Legenda głosi, że w Mysiej Wieży na wyspie ukarano niegdyś okrutnego księcia Popiela -
-        zjedzony został żywcem przez myszy. Odtąd co roku, gdy zapada zmierzch nad Gopłem,
-        gryzonie znów pojawiają się w Kruszwicy. Chwyć łuk i broń ziarna. Nie pozwól,
+        Legenda głosi, że w wieży na wyspie ukarano niegdyś okrutnego księcia Popiela -
+        zjedzony żywcem przez chmarę myszy. Odtąd co roku, gdy zapada zmierzch nad Gopłem,
+        gryzonie znów ciągną ku spichlerzom Kruszwicy. Chwyć łuk. Broń ziarna. Nie pozwól,
         by historia się powtórzyła. Strzeż się jednak przebiegających strażników-łuczników -
         trafienie jednego z nich kosztuje Cię <strong>-20 punktów</strong>!
       </p>
@@ -651,18 +651,32 @@
 
   /* ============ Mice ============ */
   function spawnMouse(){
-    const fromLeft = Math.random() < 0.5;
     const roll = Math.random();
     const isGold = roll < 0.08;
     const isFast = !isGold && roll < 0.30;
-    const y = rand(GROUND_Y()-30, GROUND_Y()+22);
     const speedBase = isGold ? rand(150,190) : isFast ? rand(120,155) : rand(60,95);
     const speedMul = 1 + Math.min(elapsed/45000, 1.1); // ramps over ~45s
+    const speed = speedBase * speedMul;
+
+    // Myszy wybiegają z Mysiej Wieży (zamku) po lewej stronie planszy
+    const startX = W*0.30 + rand(-16,16);
+    const startY = GROUND_Y() - rand(20,55);
+
+    // ...i pędzą w stronę łucznika strzegącego spichlerza (środek planszy)
+    const targetX = CAPTURE_X() + rand(-14,14);
+    const targetY = GROUND_Y() + rand(-6,16);
+
+    const dx = targetX - startX, dy = targetY - startY;
+    const dist = Math.hypot(dx,dy) || 1;
+    const vx = (dx/dist) * speed;
+    const vy = (dy/dist) * speed;
+
     mice.push({
-      x: fromLeft ? -30 : W+30,
-      y,
-      dir: fromLeft ? 1 : -1,
-      speed: speedBase*speedMul,
+      x: startX,
+      y: startY,
+      vx, vy,
+      dir: vx >= 0 ? 1 : -1,
+      speed,
       isGold, isFast,
       bob: Math.random()*10,
       alive:true,
@@ -675,16 +689,17 @@
   function updateMice(dt){
     for(const m of mice){
       if(!m.alive) continue;
-      m.x += m.dir * m.speed * dt;
+      m.x += m.vx * dt;
+      m.y += m.vy * dt;
       m.wobblePhase += dt*6;
-      m.y += Math.sin(m.wobblePhase + m.bob) * 6 * dt;
+      m.y += Math.sin(m.wobblePhase + m.bob) * 4 * dt;
       // reached granary?
       if(Math.abs(m.x - CAPTURE_X()) < 26 && Math.abs(m.y-(GROUND_Y()+10)) < 60){
         m.alive = false; m.caught = false; m.stole = true;
         onGrainStolen(m);
       }
       // offscreen without reaching center (rare, just cleanup)
-      if(m.x < -60 || m.x > W+60){ m.alive = false; }
+      if(m.x < -80 || m.x > W+80 || m.y < -80 || m.y > H+80){ m.alive = false; }
     }
     mice = mice.filter(m => m.alive || m.deathT !== undefined);
   }
