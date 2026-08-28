@@ -1,8 +1,8 @@
 // /api/save-score.js
 // Funkcja serwerowa Vercel — dopisuje wynik gracza do pliku wynik.txt
-// przechowywanego w Vercel Blob Storage.
+// przechowywanego w prywatnym Vercel Blob Storage.
 
-import { put, list } from '@vercel/blob';
+import { put, get } from '@vercel/blob';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -26,11 +26,13 @@ export default async function handler(req, res) {
 
     // --- wczytanie obecnej zawartości wynik.txt (jeśli istnieje) ---
     let existingText = '';
-    const { blobs } = await list({ prefix: 'wynik.txt' });
-    const existing = blobs.find(b => b.pathname === 'wynik.txt');
-    if (existing) {
-      const r = await fetch(existing.url, { cache: 'no-store' });
-      existingText = await r.text();
+    try {
+      const result = await get('wynik.txt', { access: 'private', useCache: false });
+      if (result && result.stream) {
+        existingText = await new Response(result.stream).text();
+      }
+    } catch (e) {
+      // Plik jeszcze nie istnieje przy pierwszym zapisie — to nie jest błąd.
     }
 
     const line = `${name};${score};${Date.now()}\n`;
@@ -38,7 +40,7 @@ export default async function handler(req, res) {
 
     // --- nadpisanie tego samego pliku (bez losowego sufiksu w nazwie) ---
     await put('wynik.txt', newText, {
-      access: 'public',
+      access: 'private',
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: 'text/plain; charset=utf-8',
