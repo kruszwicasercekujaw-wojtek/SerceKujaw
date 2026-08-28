@@ -1062,16 +1062,26 @@
     state = STATE.PLAY;
     sfx.start();
     requestAnimationFrame(positionCloudBoard);
+    setTimeout(positionCloudBoard, 150);
+    setTimeout(positionCloudBoard, 500);
+    setTimeout(positionCloudBoard, 1000);
   }
 
   function positionCloudBoard(){
     if(!hud || !cloudBoard) return;
     if(hud.classList.contains('hidden')) return;
     const rect = hud.getBoundingClientRect();
-    cloudBoard.style.top = Math.round(rect.bottom + 10) + 'px';
+    cloudBoard.style.top = Math.round(rect.bottom + 12) + 'px';
   }
   window.addEventListener('resize', positionCloudBoard);
   window.addEventListener('orientationchange', ()=> requestAnimationFrame(positionCloudBoard));
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(positionCloudBoard).catch(()=>{});
+  }
+  if(window.ResizeObserver){
+    const hudResizeObserver = new ResizeObserver(()=> positionCloudBoard());
+    hudResizeObserver.observe(hud);
+  }
 
   function endGame(byLoss){
     state = STATE.OVER;
