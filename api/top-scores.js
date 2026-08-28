@@ -1,3 +1,7 @@
+// /api/top-scores.js
+// Funkcja serwerowa Vercel — czyta wynik.txt z Vercel Blob Storage
+// i zwraca 5 najlepszych wyników jako JSON.
+
 import { list } from '@vercel/blob';
 
 export default async function handler(req, res) {
