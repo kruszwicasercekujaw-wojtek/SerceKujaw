@@ -1,17 +1,18 @@
 // /api/export-txt.js
-// Zwraca surową zawartość wynik.txt jako plik do pobrania.
+// Zwraca surową zawartość wynik.txt jako plik do pobrania (store prywatny).
 
-import { list } from '@vercel/blob';
+import { get } from '@vercel/blob';
 
 export default async function handler(req, res) {
   try {
-    const { blobs } = await list({ prefix: 'wynik.txt' });
-    const existing = blobs.find(b => b.pathname === 'wynik.txt');
-
     let text = '';
-    if (existing) {
-      const r = await fetch(existing.url, { cache: 'no-store' });
-      text = await r.text();
+    try {
+      const result = await get('wynik.txt', { access: 'private', useCache: false });
+      if (result && result.stream) {
+        text = await new Response(result.stream).text();
+      }
+    } catch (e) {
+      // Plik jeszcze nie istnieje — zwrócimy pusty plik.
     }
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
