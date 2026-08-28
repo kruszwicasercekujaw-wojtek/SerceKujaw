@@ -317,6 +317,16 @@
   const CAPTURE_X = () => W/2;        // granary position
   const ARCHER_X = () => W/2;
   const ARCHER_Y = () => H*0.86;
+  // Pozycja zamku (Mysiej Wieży) — na wąskich, pionowych ekranach (telefony)
+  // przesunięta znacznie dalej w lewo, żeby dać więcej dystansu do reakcji.
+  const CASTLE_X = () => {
+    const aspect = W / H;
+    let frac;
+    if(aspect < 0.62) frac = 0.06;       // bardzo wąski ekran (telefon pionowo)
+    else if(aspect < 0.85) frac = 0.14;  // umiarkowanie wąski
+    else frac = 0.30;                    // szeroki ekran (desktop/tablet poziomo)
+    return W*frac;
+  };
 
   /* ============ Helpers ============ */
   function rand(a,b){ return a + Math.random()*(b-a); }
@@ -356,7 +366,7 @@
     }
 
     // Mysia Wieża — brick octagonal tower on its hill, with ruined walls either side
-    drawTower(W*0.30, horizon+2, clamp(H*0.000729, 0.32, 0.85));
+    drawTower(CASTLE_X(), horizon+2, clamp(H*0.000729, 0.32, 0.85));
 
     // grass foreground where mice/archers run and the hunter stands
     const groundGrad = ctx.createLinearGradient(0,horizon-6,0,H);
@@ -659,7 +669,7 @@
     const speed = speedBase * speedMul;
 
     // Myszy wybiegają z Mysiej Wieży (zamku) po lewej stronie planszy
-    const startX = W*0.30 + rand(-16,16);
+    const startX = CASTLE_X() + rand(-16,16);
     const startY = GROUND_Y() - rand(20,55);
 
     // ...i pędzą w stronę łucznika strzegącego spichlerza (środek planszy)
