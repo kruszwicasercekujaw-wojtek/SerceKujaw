@@ -132,6 +132,7 @@
     box-shadow:0 4px 10px rgba(0,0,0,0.4);
   }
   .hud-box .val{ font-size:20px; color:var(--gold-bright); display:block; margin-top:2px; }
+  #scoreVal{ color:#ffffff; text-shadow:0 2px 6px rgba(0,0,0,0.6); }
   #sacks{ display:flex; gap:6px; margin-top:4px; }
   .sack{ width:16px; height:18px; border-radius:2px 2px 6px 6px; background:var(--gold); border:1px solid #6b4e1c; opacity:1; transition: opacity .3s, transform .3s; }
   .sack.lost{ opacity:.18; transform:scale(.8) rotate(15deg); background:#555; }
@@ -148,6 +149,43 @@
   #results td{ padding:4px 6px; border-bottom:1px solid rgba(74,46,30,0.2); }
   #results tr.me{ background:rgba(201,162,75,0.28); font-weight:600; }
   #results .rank{ width:26px; color:var(--danger); font-family:'Cinzel',serif; }
+
+  /* ---------- In-game TOP 5 leaderboard (top-right, stays clear of play area) ---------- */
+  #cloudBoard{
+    position:absolute; top:64px; right:18px; z-index:5;
+    display:flex; flex-direction:column; align-items:flex-end; gap:4px;
+    pointer-events:none; max-width:50vw; text-align:right;
+  }
+  #cloudBoard .cb-title{
+    font-family:'Cinzel',serif; font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:#ffffff; text-shadow:0 2px 6px rgba(0,0,0,0.75); margin-bottom:4px; opacity:.9;
+  }
+  .score-row{
+    font-family:'EB Garamond', serif;
+    font-size:15px;
+    color:#ffffff;
+    text-shadow:0 2px 6px rgba(0,0,0,0.75);
+    text-align:right;
+    white-space:nowrap;
+  }
+  .score-row .cb-rank{ font-family:'Cinzel',serif; color:#ffe9b0; margin-right:6px; }
+  .score-row .cb-score{ font-weight:700; margin-left:8px; }
+  .score-row.me{ color:var(--gold-bright); font-weight:700; }
+  .score-row.empty{ opacity:.7; font-style:italic; font-size:13px; }
+
+  @media (max-width:640px){
+    #cloudBoard{ top:58px; right:10px; gap:2px; max-width:56vw; }
+    .score-row{ font-size:12.5px; }
+    #cloudBoard .cb-title{ font-size:9px; }
+  }
+
+  .btn.txt-export{
+    background:linear-gradient(180deg,#3f6f5e,#274a3d);
+    color:var(--parchment);
+    box-shadow: 0 4px 0 #163024, 0 8px 16px rgba(0,0,0,0.35);
+    font-size:13px;
+    padding:10px 20px;
+  }
 
   @media (max-width:520px){
     .plaque{ padding:26px 20px; }
@@ -174,6 +212,9 @@
     </div>
   </div>
   <div id="combo"></div>
+  <div id="cloudBoard" class="hidden">
+    <div class="cb-title">Top Łowcy</div>
+  </div>
 
   <!-- Menu -->
   <div class="overlay" id="menuScreen">
@@ -205,6 +246,7 @@
       <table id="leaderboard"></table>
       <div style="text-align:center;">
         <button class="btn" id="againBtn">Zapoluj ponownie</button>
+        <button class="btn txt-export" id="exportBtnOver" type="button">Pobierz wyniki (.txt)</button>
       </div>
     </div>
   </div>
@@ -228,6 +270,9 @@
   const timeVal = document.getElementById('timeVal');
   const sacksEl = document.getElementById('sacks');
   const comboEl = document.getElementById('combo');
+  const cloudBoard = document.getElementById('cloudBoard');
+  const exportBtnMenu = document.getElementById('exportBtnMenu');
+  const exportBtnOver = document.getElementById('exportBtnOver');
 
   let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
 
@@ -1011,6 +1056,8 @@
     menuScreen.classList.add('hidden');
     overScreen.classList.add('hidden');
     hud.classList.remove('hidden');
+    cloudBoard.classList.remove('hidden');
+    loadTopScores();
     state = STATE.PLAY;
     sfx.start();
   }
@@ -1018,6 +1065,7 @@
   function endGame(byLoss){
     state = STATE.OVER;
     hud.classList.add('hidden');
+    cloudBoard.classList.add('hidden');
     sfx.over();
     const overTitle = document.getElementById('overTitle');
     const overText = document.getElementById('overText');
@@ -1031,36 +1079,107 @@
       overTitle.textContent = 'Spichlerz ocalał!';
       overText.textContent = `Obroniłeś ziarno Kruszwicy do końca nocy. Upolowałeś ${kills} myszy, najlepsza seria: ×${bestCombo}.`;
     }
+    document.getElementById('leaderboard').innerHTML = '<tr><td style="color:#7a5a3a; font-style:italic;">Zapisywanie wyniku…</td></tr>';
     saveScore();
-    renderLeaderboard();
     overScreen.classList.remove('hidden');
   }
 
-  /* ============ Leaderboard (localStorage) ============ */
-  const LB_KEY = 'kruszwica_mysia_wieza_leaderboard_v1';
-  let lastEntryId = null;
-  function saveScore(){
-    let list = [];
-    try{ list = JSON.parse(localStorage.getItem(LB_KEY)) || []; }catch(e){ list = []; }
-    const id = Date.now()+'_'+Math.random().toString(36).slice(2,7);
-    list.push({ id, name: nickname, score, ts: Date.now() });
-    list.sort((a,b)=>b.score-a.score);
-    list = list.slice(0,10);
-    lastEntryId = list.find(e=>e.id===id) ? id : null;
-    localStorage.setItem(LB_KEY, JSON.stringify(list));
+  /* ============ Leaderboard (server-side wynik.txt via PHP) ============ */
+  let lastRun = null; // {name, score} of the run just finished, for "me" highlight
+
+  async function saveScore(){
+    lastRun = { name: nickname, score: score };
+    try{
+      const body = new URLSearchParams({ name: nickname, score: String(score) });
+      const res = await fetch('save_score.php', { method:'POST', body });
+      const data = await res.json();
+      if(!data || !data.ok){
+        console.warn('Serwer odrzucił zapis wyniku:', data && data.error);
+      }
+    }catch(e){
+      console.warn('Nie udało się zapisać wyniku na serwerze (wynik.txt):', e);
+    }
+    await loadTopScores();
   }
-  function renderLeaderboard(){
-    let list = [];
-    try{ list = JSON.parse(localStorage.getItem(LB_KEY)) || []; }catch(e){ list = []; }
+
+  async function loadTopScores(){
+    let top = null;
+    try{
+      const res = await fetch('top_scores.php', { cache:'no-store' });
+      const data = await res.json();
+      if(data && data.ok) top = data.top;
+    }catch(e){
+      console.warn('Nie udało się pobrać wyników z serwera (top_scores.php):', e);
+    }
+    renderCloudBoard(top);
+    renderLeaderboard(top);
+  }
+
+  function renderCloudBoard(top){
+    cloudBoard.querySelectorAll('.score-row').forEach(el=>el.remove());
+    if(top === null){
+      const d = document.createElement('div');
+      d.className = 'score-row empty';
+      d.textContent = 'brak połączenia z serwerem';
+      cloudBoard.appendChild(d);
+      return;
+    }
+    if(top.length === 0){
+      const d = document.createElement('div');
+      d.className = 'score-row empty';
+      d.textContent = 'brak wyników';
+      cloudBoard.appendChild(d);
+      return;
+    }
+    let meMarked = false;
+    top.forEach((e,i)=>{
+      const isMe = !meMarked && lastRun && e.name===lastRun.name && e.score===lastRun.score;
+      if(isMe) meMarked = true;
+      const d = document.createElement('div');
+      d.className = 'score-row' + (isMe ? ' me' : '');
+      d.innerHTML = `<span class="cb-rank">${i+1}.</span>${escapeHtml(e.name)}<span class="cb-score">${e.score}</span>`;
+      cloudBoard.appendChild(d);
+    });
+  }
+
+  function renderLeaderboard(top){
     const tbl = document.getElementById('leaderboard');
-    if(list.length===0){ tbl.innerHTML=''; return; }
+    if(top === null){
+      tbl.innerHTML = '<tr><td style="color:#7a5a3a;">Brak połączenia z serwerem — nie udało się wczytać wyników.</td></tr>';
+      return;
+    }
+    if(top.length===0){ tbl.innerHTML=''; return; }
+    let meMarked = false;
     tbl.innerHTML = '<tr><td colspan="3" style="font-family:\'Cinzel\',serif; font-size:11px; letter-spacing:.1em; color:#6b4e1c; padding-top:10px;">NAJLEPSI ŁOWCY KRUSZWICY</td></tr>' +
-      list.map((e,i)=>`<tr class="${e.id===lastEntryId?'me':''}"><td class="rank">${i+1}.</td><td>${escapeHtml(e.name)}</td><td style="text-align:right; font-weight:600;">${e.score}</td></tr>`).join('');
+      top.map((e,i)=>{
+        const isMe = !meMarked && lastRun && e.name===lastRun.name && e.score===lastRun.score;
+        if(isMe) meMarked = true;
+        return `<tr class="${isMe?'me':''}"><td class="rank">${i+1}.</td><td>${escapeHtml(e.name)}</td><td style="text-align:right; font-weight:600;">${e.score}</td></tr>`;
+      }).join('');
   }
+
   function escapeHtml(s){
     return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  async function exportScoresTxt(){
+    try{
+      const res = await fetch('wynik.txt', { cache:'no-store' });
+      if(!res.ok) throw new Error('brak pliku wynik.txt');
+      const text = await res.text();
+      const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'wynik.txt';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }catch(e){
+      alert('Nie udało się pobrać pliku wynik.txt z serwera.');
+    }
+  }
+
+  exportBtnMenu.addEventListener('click', exportScoresTxt);
+  exportBtnOver.addEventListener('click', exportScoresTxt);
   startBtn.addEventListener('click', startGame);
   nickInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') startGame(); });
   againBtn.addEventListener('click', ()=>{
