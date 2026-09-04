@@ -44,6 +44,7 @@
   .hidden{ display:none !important; }
 
   .plaque{
+    position:relative;
     background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
     border:3px solid var(--wood);
     box-shadow: 0 0 0 6px var(--wood-dark), 0 20px 50px rgba(0,0,0,0.55), inset 0 0 30px rgba(74,46,30,0.25);
@@ -52,6 +53,62 @@
     max-width:520px;
     width:92%;
     color:var(--ink);
+  }
+  .modal-close{
+    position:absolute; top:8px; right:10px;
+    width:30px; height:30px; border-radius:50%;
+    border:none; background:rgba(74,46,30,0.12);
+    color:var(--wood); font-family:'Cinzel',serif; font-size:18px; line-height:1;
+    cursor:pointer;
+  }
+  .modal-close:hover{ background:rgba(74,46,30,0.22); }
+
+  /* ---------- Attract-mode CTA (idle screen, board visible behind) ---------- */
+  .cta-wrap{
+    position:absolute; inset:0; z-index:6;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:none;
+  }
+  .cta-box{
+    pointer-events:auto;
+    text-align:center;
+    background:linear-gradient(180deg, rgba(42,29,18,0.85), rgba(20,13,7,0.88));
+    border:1px solid var(--gold);
+    border-radius:10px;
+    padding:20px 36px 26px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    animation: fadeIn .6s ease;
+  }
+  .cta-box .eyebrow{ color:var(--gold-bright); opacity:.9; }
+  .cta-title{
+    font-family:'Cinzel', serif;
+    font-size:clamp(20px, 4vw, 30px);
+    margin:0 0 16px;
+    line-height:1.2;
+    color:var(--parchment);
+    text-shadow:0 2px 10px rgba(0,0,0,0.6);
+  }
+  .cta-stack{
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+    pointer-events:auto; max-width:92vw;
+  }
+  .logo-row{
+    display:flex; flex-direction:row; align-items:center; justify-content:center;
+    gap:18px; flex-wrap:nowrap; animation: fadeIn .6s ease;
+  }
+  .logo-img{
+    height:56px; max-height:9vh; width:auto; max-width:38vw;
+    object-fit:contain;
+    filter: drop-shadow(0 3px 8px rgba(0,0,0,0.55));
+  }
+  @media (max-width:520px){
+    .logo-row{ gap:12px; }
+    .logo-img{ height:42px; max-height:7vh; }
+  }
+  #playBtn{ font-size:20px; padding:16px 48px; margin-top:0; }
+  @media (max-width:520px){
+    .cta-box{ padding:16px 22px 20px; }
+    #playBtn{ font-size:17px; padding:14px 36px; }
   }
   .eyebrow{
     font-family:'Cinzel', serif;
@@ -144,6 +201,53 @@
     pointer-events:none; z-index:5;
   }
 
+  /* ---------- Combo / multiplier progress bar ---------- */
+  #comboMeter{ margin-top:6px; }
+  .cm-label{
+    font-family:'Cinzel',serif; font-size:11px; letter-spacing:.06em;
+    color:var(--gold-bright); margin-top:4px; text-align:left;
+    text-shadow:0 2px 6px rgba(0,0,0,0.6);
+  }
+  .cm-track{
+    width:84px; height:6px; border-radius:4px; overflow:hidden;
+    background:rgba(255,255,255,0.15); border:1px solid rgba(232,200,118,0.35);
+    margin-top:5px;
+  }
+  .cm-fill{
+    height:100%; width:0%;
+    background:linear-gradient(90deg, var(--gold), var(--gold-bright));
+    transition:width .18s ease;
+  }
+  .cm-track.levelup{ animation: cmPulse .45s ease; }
+  @keyframes cmPulse{
+    0%{ box-shadow:0 0 0 0 rgba(232,200,118,0.85); }
+    100%{ box-shadow:0 0 0 12px rgba(232,200,118,0); }
+  }
+
+  /* ---------- Power-up buffs (dropped by golden mice) ---------- */
+  #powerupBar{
+    position:absolute; left:50%; top:60px; transform:translateX(-50%);
+    display:flex; gap:8px; z-index:5; pointer-events:none;
+  }
+  .pu-pill{
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:linear-gradient(180deg, rgba(42,29,18,0.88), rgba(20,13,7,0.9));
+    border:1px solid var(--gold); border-radius:10px; padding:5px 9px;
+    font-family:'Cinzel',serif; font-size:16px; color:var(--gold-bright);
+    opacity:0; transform:scale(.8) translateY(-4px);
+    transition:opacity .18s ease, transform .18s ease;
+  }
+  .pu-pill.active{ opacity:1; transform:scale(1) translateY(0); }
+  .pu-pill .pu-bar-track{ width:36px; height:4px; border-radius:3px; background:rgba(255,255,255,0.2); overflow:hidden; }
+  .pu-pill .pu-bar-fill{ height:100%; width:100%; background:var(--gold-bright); }
+
+  @media (max-width:520px){
+    .cm-track{ width:64px; }
+    #powerupBar{ top:52px; gap:5px; }
+    .pu-pill{ padding:4px 7px; font-size:14px; }
+    .pu-pill .pu-bar-track{ width:28px; }
+  }
+
   #results{ text-align:left; }
   #results table{ width:100%; border-collapse:collapse; margin-top:6px; font-size:15px;}
   #results td{ padding:4px 6px; border-bottom:1px solid rgba(74,46,30,0.2); }
@@ -201,6 +305,10 @@
   <div id="hud" class="hidden">
     <div class="hud-box">
       ŁUP<span class="val" id="scoreVal">0</span>
+      <div id="comboMeter">
+        <div class="cm-track" id="cmTrack"><div class="cm-fill" id="cmFill"></div></div>
+        <div class="cm-label" id="cmLabel">×1.0</div>
+      </div>
     </div>
     <div class="hud-box" style="text-align:center;">
       SPICHLERZ
@@ -210,14 +318,35 @@
       CZAS<span class="val" id="timeVal">60</span>
     </div>
   </div>
+  <div id="powerupBar">
+    <div class="pu-pill" id="puTriple"><span>🏹🏹🏹</span><div class="pu-bar-track"><div class="pu-bar-fill" id="puTripleFill"></div></div></div>
+    <div class="pu-pill" id="puSlow"><span>⏳</span><div class="pu-bar-track"><div class="pu-bar-fill" id="puSlowFill"></div></div></div>
+    <div class="pu-pill" id="puPierce"><span>✨</span><div class="pu-bar-track"><div class="pu-bar-fill" id="puPierceFill"></div></div></div>
+  </div>
   <div id="combo"></div>
-  <div id="cloudBoard" class="hidden"></div>
+  <div id="cloudBoard"></div>
 
-  <!-- Menu -->
-  <div class="overlay" id="menuScreen">
+  <!-- Idle attract-mode screen: game board + top-5 visible behind, archer auto-shoots until PLAY -->
+  <div class="cta-wrap" id="menuScreen">
+    <div class="cta-stack">
+      <div class="logo-row">
+        <img class="logo-img" src="https://www.kruszwicasercekujaw.pl/assets/logo.png" alt="Kruszwica - Serce Kujaw">
+        <img class="logo-img" src="https://www.kruszwicasercekujaw.pl/assets/goplanie.png" alt="Gopłanie">
+      </div>
+      <div class="cta-box">
+        <p class="eyebrow">Rok Pański 965, gród nad jeziorem Gopło</p>
+        <h1 class="cta-title">Kruszwica<br>Polowanie Na Myszy</h1>
+        <button class="btn" id="playBtn">▶ Graj</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nickname popup: opens after pressing PLAY, must be filled before real hunt starts -->
+  <div class="overlay hidden" id="nicknameModal">
     <div class="plaque">
+      <button class="modal-close" id="modalCloseBtn" aria-label="Zamknij">×</button>
       <p class="eyebrow">Rok Pański 965, gród nad jeziorem Gopło</p>
-      <h1>Kruszwica<br>Polowanie Na Myszy</h1>
+      <h1>Zanim ruszysz na łowy</h1>
       <p class="legend">
         Legenda głosi, że w Mysiej Wieży na wyspie ukarano niegdyś okrutnego księcia Popiela -
         zjedzony został żywcem przez myszy. Odtąd co roku, gdy zapada zmierzch nad Gopłem,
@@ -230,7 +359,7 @@
       <div>
         <button class="btn" id="startBtn">Rozpocznij łowy</button>
       </div>
-      <p class="hint">Celuj w myszy/ palcem, kliknij lub dotknij cel, by wypuścić strzałę. Omijaj łuczników - nie są celem!</p>
+      <p class="hint">Celuj palcem, kliknij lub dotknij cel, by wypuścić strzałę. Omijaj łuczników - nie są celem!</p>
     </div>
   </div>
 
@@ -257,15 +386,27 @@
   const ctx = canvas.getContext('2d');
   const stage = document.getElementById('stage');
   const menuScreen = document.getElementById('menuScreen');
+  const nicknameModal = document.getElementById('nicknameModal');
   const overScreen = document.getElementById('overScreen');
   const hud = document.getElementById('hud');
   const nickInput = document.getElementById('nickInput');
+  const playBtn = document.getElementById('playBtn');
   const startBtn = document.getElementById('startBtn');
+  const modalCloseBtn = document.getElementById('modalCloseBtn');
   const againBtn = document.getElementById('againBtn');
   const scoreVal = document.getElementById('scoreVal');
   const timeVal = document.getElementById('timeVal');
   const sacksEl = document.getElementById('sacks');
   const comboEl = document.getElementById('combo');
+  const cmTrack = document.getElementById('cmTrack');
+  const cmFill = document.getElementById('cmFill');
+  const cmLabel = document.getElementById('cmLabel');
+  const puTriple = document.getElementById('puTriple');
+  const puTripleFill = document.getElementById('puTripleFill');
+  const puSlow = document.getElementById('puSlow');
+  const puSlowFill = document.getElementById('puSlowFill');
+  const puPierce = document.getElementById('puPierce');
+  const puPierceFill = document.getElementById('puPierceFill');
   const cloudBoard = document.getElementById('cloudBoard');
 
   let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -299,6 +440,12 @@
     penalty: () => { beep(220,0.14,'sawtooth',0.16,90); setTimeout(()=>beep(160,0.20,'sawtooth',0.14,70),60); },
     start: () => { beep(300,0.14,'triangle',0.12,500); },
     over:  () => beep(220,0.5,'sine',0.14,110),
+    kingIn: () => { beep(700,0.12,'sine',0.09,900); setTimeout(()=>beep(900,0.1,'sine',0.08,1100),80); },
+    heal:  () => { beep(520,0.14,'sine',0.15,780); setTimeout(()=>beep(780,0.16,'sine',0.14,1040),90); setTimeout(()=>beep(1040,0.2,'sine',0.13,1300),180); },
+    powerup: () => { beep(600,0.10,'square',0.12,900); setTimeout(()=>beep(900,0.10,'square',0.11,1200),60); setTimeout(()=>beep(1200,0.12,'square',0.10,1500),120); },
+    goose: () => beep(310,0.09,'sawtooth',0.09,340),
+    flock: () => { beep(500,0.1,'sine',0.07,600); setTimeout(()=>beep(650,0.1,'sine',0.07,750),70); },
+    flockBonus: () => { beep(520,0.12,'square',0.15,780); setTimeout(()=>beep(700,0.12,'square',0.15,980),90); setTimeout(()=>beep(880,0.14,'square',0.15,1180),180); setTimeout(()=>beep(1180,0.22,'square',0.16,1500),280); },
   };
 
   /* ============ Game state ============ */
@@ -310,13 +457,28 @@
   let spawnTimer = 0;
   let mice = [], arrows = [], particles = [];
   let raiders = [], raiderSpawnTimer = 2600;
+  let kingMouse = null, kingCooldown = 4000;
+  let geeseFlock = null, geeseCooldown = rand(9000,15000);
+  const POWERUP_DURATION = 5000;
+  let powerupTriple = 0, powerupSlow = 0, powerupPierce = 0;
   let pointer = { x: 0, y: 0, active:false };
   let lastTs = 0;
+  let idleSpawnTimer = 0, idleShootTimer = 600;
 
   const GROUND_Y = () => H*0.66;      // path where mice run
   const CAPTURE_X = () => W/2;        // granary position
   const ARCHER_X = () => W/2;
   const ARCHER_Y = () => H*0.86;
+
+  // top of the Mysia Wieża tower (mirrors the transform used in drawTower/drawBackground)
+  function towerTopPos(){
+    const horizon = H*0.62;
+    const scale = clamp(H*0.000729, 0.32, 0.85);
+    const towerX = W*0.30, towerY = horizon+2;
+    const H0 = 300, hillTop = -76;
+    const localY = -H0-16; // perched just above the tower's broken top edge
+    return { x: towerX, y: towerY + scale*(hillTop+16+localY), scale };
+  }
 
   /* ============ Helpers ============ */
   function rand(a,b){ return a + Math.random()*(b-a); }
@@ -383,9 +545,10 @@
     ctx.moveTo(W*0.86, H*1.02); ctx.quadraticCurveTo(W*0.64, H*0.82, W*0.5, GROUND_Y()+34);
     ctx.stroke();
 
-    // flanking foreground trees, echoing the two trees either side of the tower in the photo
-    drawFgTree(W*0.115, horizon+H*0.135, 1.0);
-    drawFgTree(W*0.90, horizon+H*0.12, 0.92);
+    // flanking trees — kept well BELOW the mouse-running lane (GROUND_Y) and shrunk down,
+    // so mice always run cleanly in front of them: no overlap, no hiding behind foliage.
+    drawFgTree(W*0.10, GROUND_Y()+95, 0.55);
+    drawFgTree(W*0.905, GROUND_Y()+85, 0.5);
 
     // granary (grain sacks) at capture point
     drawGranary(CAPTURE_X(), GROUND_Y()+18);
@@ -821,13 +984,204 @@
     particles.push({x:hx,y:hy,vx:0,vy:-40,life:1.3,color:'#ff8a7a',text:'-20', isText:true});
   }
 
+  /* ============ Rare event: flock of geese over Gopło (hit them ALL for a big bonus) ============ */
+  function spawnGeeseFlock(){
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const crossTime = rand(4.2, 5.6);
+    const speed = (W + 180) / crossTime;
+    // V-formation, trailing behind the leader relative to flight direction
+    const formation = [
+      {ox:0, oy:0},
+      {ox:-24*dir, oy:11}, {ox:-24*dir, oy:-11},
+      {ox:-48*dir, oy:21}, {ox:-48*dir, oy:-21}
+    ];
+    geeseFlock = {
+      x: dir===1 ? -90 : W+90,
+      y: H*(0.15+Math.random()*0.08),
+      vx: dir*speed, dir, t:0,
+      geese: formation.map(f => ({ ox:f.ox, oy:f.oy, r:11, alive:true }))
+    };
+    sfx.flock();
+  }
+
+  function updateGeese(dt){
+    if(geeseFlock){
+      geeseFlock.t += dt;
+      geeseFlock.x += geeseFlock.vx*dt;
+      geeseFlock.y += Math.sin(geeseFlock.t*1.4)*0.4;
+      const gone = geeseFlock.dir===1 ? geeseFlock.x > W+90 : geeseFlock.x < -90;
+      if(gone){
+        geeseFlock = null;
+        geeseCooldown = rand(20000,32000);
+      }
+    } else {
+      geeseCooldown -= dt*1000;
+      if(geeseCooldown <= 0) spawnGeeseFlock();
+    }
+  }
+
+  function onGooseHit(gx,gy){
+    score += 8;
+    scoreVal.textContent = score;
+    sfx.goose();
+    spawnBurst(gx,gy,'#e8e2d0', 8);
+    if(geeseFlock && geeseFlock.geese.every(g=>!g.alive)){
+      triggerFlockBonus();
+    }
+  }
+
+  function triggerFlockBonus(){
+    const bonus = 150;
+    score += bonus;
+    scoreVal.textContent = score;
+    sfx.flockBonus();
+    const cx = geeseFlock.x, cy = geeseFlock.y;
+    for(let i=0;i<14;i++){
+      const ang = (i/14)*Math.PI*2;
+      particles.push({x:cx,y:cy,vx:Math.cos(ang)*140,vy:Math.sin(ang)*140,life:0.9,color:'#fff6d8'});
+    }
+    particles.push({x:cx,y:cy-16,vx:0,vy:-40,life:1.8,color:'#fff6d8',text:'Całe stado! +'+bonus, isText:true});
+    geeseFlock = null;
+    geeseCooldown = rand(25000,40000);
+  }
+
+  function drawGoose(x,y,dir,flap){
+    ctx.save();
+    ctx.translate(x,y); ctx.scale(dir,1);
+    ctx.strokeStyle = '#332c22'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    const w = 9, wingY = Math.sin(flap)*4.5;
+    ctx.beginPath();
+    ctx.moveTo(-w,4+wingY);
+    ctx.quadraticCurveTo(-w*0.35,-3-wingY,0,0);
+    ctx.quadraticCurveTo(w*0.35,-3-wingY,w,4+wingY);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawGeeseFlock(flock){
+    for(const g of flock.geese){
+      if(!g.alive) continue;
+      const x = flock.x+g.ox, y = flock.y+g.oy;
+      drawGoose(x, y, flock.dir, flock.t*9 + g.ox*0.1);
+    }
+  }
+
+
+  /* ============ Crown Mouse (rare bonus atop the tower — restores 1 sack) ============ */
+  function spawnKingMouse(){
+    const pos = towerTopPos();
+    kingMouse = {
+      x: pos.x, y: pos.y,
+      r: 10 + 8*pos.scale,
+      t: Math.random()*10,
+      ttl: 4200, totalTtl: 4200,
+      alpha: 0,
+    };
+    sfx.kingIn();
+  }
+
+  function updateKingMouse(dt){
+    if(kingMouse){
+      kingMouse.t += dt;
+      kingMouse.ttl -= dt*1000;
+      const fadeDur = 400;
+      if(kingMouse.ttl > kingMouse.totalTtl - fadeDur){
+        kingMouse.alpha = 1 - (kingMouse.ttl-(kingMouse.totalTtl-fadeDur))/fadeDur;
+      } else if(kingMouse.ttl < fadeDur){
+        kingMouse.alpha = Math.max(0, kingMouse.ttl/fadeDur);
+      } else {
+        kingMouse.alpha = 1;
+      }
+      if(kingMouse.ttl <= 0){
+        kingMouse = null;
+        kingCooldown = rand(12000,18000);
+      }
+    } else if(state === STATE.PLAY){
+      kingCooldown -= dt*1000;
+      if(lives === 1 && kingCooldown <= 0){
+        spawnKingMouse();
+      }
+    }
+  }
+
+  function onKingMouseHit(hx,hy){
+    if(!kingMouse) return;
+    lives = Math.min(3, lives+1);
+    renderSacks();
+    sfx.heal();
+    spawnBurst(kingMouse.x, kingMouse.y, '#e8c876', null);
+    particles.push({x:kingMouse.x,y:kingMouse.y-10,vx:0,vy:-40,life:1.4,color:'#fff6d8',text:'+1 worek', isText:true});
+    kingMouse = null;
+    kingCooldown = rand(15000,20000);
+  }
+
+  function drawKingMouse(km){
+    ctx.save();
+    ctx.globalAlpha = km.alpha;
+    ctx.translate(km.x, km.y + Math.sin(km.t*3)*2);
+
+    // regal golden glow so it reads clearly high up on the tower
+    const glow = ctx.createRadialGradient(0,0,2,0,0,km.r*2.6);
+    glow.addColorStop(0,'rgba(255,224,120,0.55)');
+    glow.addColorStop(1,'rgba(255,224,120,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0,0,km.r*2.6,0,7); ctx.fill();
+
+    const dir = 1;
+    // tail
+    ctx.strokeStyle = '#9a978d'; ctx.lineWidth = 2.2; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-dir*km.r*0.9,2);
+    ctx.quadraticCurveTo(-dir*km.r*1.8, 8, -dir*km.r*2.2, 0);
+    ctx.stroke();
+
+    // body (silvery grey)
+    ctx.fillStyle = '#9a978d';
+    ctx.beginPath(); ctx.ellipse(0,0,km.r,km.r*0.72,0,0,7); ctx.fill();
+    // head
+    ctx.beginPath(); ctx.ellipse(dir*km.r*0.85,-2,km.r*0.55,km.r*0.48,0,0,7); ctx.fill();
+    // ears
+    ctx.fillStyle = '#c9b48c';
+    ctx.beginPath(); ctx.arc(dir*km.r*0.6,-km.r*0.8,km.r*0.32,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(dir*km.r*1.15,-km.r*0.75,km.r*0.32,0,7); ctx.fill();
+    // eye
+    ctx.fillStyle = '#211a12';
+    ctx.beginPath(); ctx.arc(dir*km.r*1.05,-3.5,1.6,0,7); ctx.fill();
+    // nose
+    ctx.fillStyle = '#c96a6a';
+    ctx.beginPath(); ctx.arc(dir*km.r*1.35,-1,1.6,0,7); ctx.fill();
+
+    // golden crown
+    const cw = km.r*0.95, chY = -km.r*1.15;
+    ctx.fillStyle = '#e8c876'; ctx.strokeStyle = '#a4791f'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(dir*km.r*0.85-cw*0.5, chY+4);
+    ctx.lineTo(dir*km.r*0.85-cw*0.5, chY);
+    ctx.lineTo(dir*km.r*0.85-cw*0.22, chY-6);
+    ctx.lineTo(dir*km.r*0.85, chY);
+    ctx.lineTo(dir*km.r*0.85+cw*0.22, chY-6);
+    ctx.lineTo(dir*km.r*0.85+cw*0.5, chY);
+    ctx.lineTo(dir*km.r*0.85+cw*0.5, chY+4);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#c24a3e';
+    ctx.beginPath(); ctx.arc(dir*km.r*0.85, chY-1.5, 1.6, 0, 7); ctx.fill();
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
   /* ============ Arrows ============ */
   function shootAt(tx,ty){
     const ax = ARCHER_X(), ay = ARCHER_Y()-66;
     const dx = tx-ax, dy = ty-ay;
-    const len = Math.hypot(dx,dy) || 1;
+    const baseAngle = Math.atan2(dy,dx);
     const speed = 900;
-    arrows.push({ x:ax, y:ay, px:ax, py:ay, vx:dx/len*speed, vy:dy/len*speed, angle:Math.atan2(dy,dx), alive:true });
+    const angles = powerupTriple>0 ? [baseAngle-0.16, baseAngle, baseAngle+0.16] : [baseAngle];
+    for(const angle of angles){
+      arrows.push({
+        x:ax, y:ay, px:ax, py:ay,
+        vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+        angle, alive:true, pierce: powerupPierce>0
+      });
+    }
     sfx.shoot();
   }
 
@@ -841,9 +1195,8 @@
         if(!m.alive) continue;
         const d = distToSeg(m.x,m.y,a.px,a.py,a.x,a.y);
         if(d < m.r+4){
-          a.alive = false;
           killMouse(m, a.x, a.y);
-          break;
+          if(!a.pierce){ a.alive = false; break; }
         }
       }
       // collision vs enemy archers — hitting one costs points, not helps
@@ -854,6 +1207,28 @@
           if(d < 16){
             a.alive = false;
             onRaiderHit(r, a.x, a.y);
+            break;
+          }
+        }
+      }
+      // collision vs the crown mouse atop the tower — heals 1 sack
+      if(a.alive && kingMouse){
+        const d = distToSeg(kingMouse.x, kingMouse.y-4, a.px,a.py,a.x,a.y);
+        if(d < kingMouse.r+5){
+          a.alive = false;
+          onKingMouseHit(a.x, a.y);
+        }
+      }
+      // collision vs the rare flock of geese — hit them all for a big bonus
+      if(a.alive && geeseFlock){
+        for(const g of geeseFlock.geese){
+          if(!g.alive) continue;
+          const gx = geeseFlock.x+g.ox, gy = geeseFlock.y+g.oy;
+          const d = distToSeg(gx,gy,a.px,a.py,a.x,a.y);
+          if(d < g.r+4){
+            g.alive = false;
+            onGooseHit(gx,gy);
+            if(!a.pierce){ a.alive = false; }
             break;
           }
         }
@@ -876,6 +1251,11 @@
   /* ============ Scoring / events ============ */
   function killMouse(m, hx, hy){
     m.alive = false;
+    if(state !== STATE.PLAY){
+      // idle attract-mode: purely visual, no scoring
+      spawnBurst(hx,hy, m.isGold ? '#f7dc7a' : '#c9b48c', null);
+      return;
+    }
     combo++;
     bestCombo = Math.max(bestCombo, combo);
     kills++;
@@ -887,15 +1267,67 @@
     if(m.isGold) sfx.gold(); else sfx.hit();
     spawnBurst(hx,hy, m.isGold ? '#f7dc7a' : '#c9b48c', pts);
     flashCombo();
+    updateComboMeter(combo%5===0);
+    if(m.isGold) grantRandomPowerup(hx, hy-18);
   }
 
   function onGrainStolen(m){
+    if(state !== STATE.PLAY){
+      // idle attract-mode: mouse just vanishes, no life lost
+      spawnBurst(m.x, m.y, '#8a6a2e', null, true);
+      return;
+    }
     lives = Math.max(0, lives-1);
     combo = 0;
     sfx.steal();
     spawnBurst(m.x, m.y, '#8a6a2e', null, true);
     renderSacks();
+    updateComboMeter(false);
     if(lives<=0){ endGame(true); }
+  }
+
+  /* ============ Combo / multiplier progress bar ============ */
+  function updateComboMeter(justLeveledUp){
+    const progress = (combo % 5) / 5;
+    const mult = 1 + Math.floor(combo/5)*0.5;
+    cmFill.style.width = (progress*100) + '%';
+    cmLabel.textContent = '×' + mult.toFixed(1);
+    if(justLeveledUp){
+      cmTrack.classList.remove('levelup');
+      void cmTrack.offsetWidth; // restart animation
+      cmTrack.classList.add('levelup');
+    }
+  }
+
+  /* ============ Power-ups (dropped by golden mice) ============ */
+  function grantRandomPowerup(x,y){
+    const types = ['triple','slow','pierce'];
+    const type = types[Math.floor(Math.random()*types.length)];
+    const labels = {
+      triple: '🏹 Potrójna strzała!',
+      slow:   '⏳ Spowolnienie czasu!',
+      pierce: '✨ Święcona strzała!'
+    };
+    if(type==='triple') powerupTriple = POWERUP_DURATION;
+    else if(type==='slow') powerupSlow = POWERUP_DURATION;
+    else if(type==='pierce') powerupPierce = POWERUP_DURATION;
+    sfx.powerup();
+    particles.push({x,y,vx:0,vy:-45,life:1.6,color:'#fff6d8',text:labels[type],isText:true});
+    updatePowerupHUD();
+  }
+
+  function updatePowerupPill(el, fillEl, timeLeft){
+    if(timeLeft > 0){
+      el.classList.add('active');
+      fillEl.style.width = Math.max(0, (timeLeft/POWERUP_DURATION)*100) + '%';
+    } else {
+      el.classList.remove('active');
+    }
+  }
+  function updatePowerupHUD(){
+    updatePowerupPill(puTriple, puTripleFill, powerupTriple);
+    updatePowerupPill(puSlow, puSlowFill, powerupSlow);
+    updatePowerupPill(puPierce, puPierceFill, powerupPierce);
   }
 
   function flashCombo(){
@@ -930,7 +1362,7 @@
     for(const p of particles){
       ctx.globalAlpha = clamp(p.life,0,1);
       if(p.isText){
-        ctx.font = "600 20px 'Cinzel', serif";
+        ctx.font = (p.text && p.text.length > 6 ? "600 17px" : "600 20px") + " 'Cinzel', serif";
         ctx.fillStyle = p.color; ctx.textAlign='center';
         ctx.fillText(p.text, p.x, p.y);
       } else {
@@ -975,6 +1407,36 @@
     }
   }
 
+  /* ============ Idle attract-mode (archer shoots on its own until PLAY is pressed) ============ */
+  function updateIdleDemo(dt){
+    idleSpawnTimer -= dt*1000;
+    if(idleSpawnTimer <= 0){ spawnMouse(); idleSpawnTimer = rand(900,1600); }
+
+    updateMice(dt);
+    updateArrows(dt);
+
+    // find nearest live mouse and aim/shoot at it automatically
+    let target = null, bestDist = Infinity;
+    for(const m of mice){
+      if(!m.alive) continue;
+      const d = Math.abs(m.x - ARCHER_X());
+      if(d < bestDist){ bestDist = d; target = m; }
+    }
+    if(target){
+      pointer.x += (target.x - pointer.x) * Math.min(1, dt*6);
+      pointer.y += (target.y - pointer.y) * Math.min(1, dt*6);
+      pointer.active = true;
+      idleShootTimer -= dt*1000;
+      if(idleShootTimer <= 0){
+        shootAt(target.x, target.y);
+        idleShootTimer = rand(650,1100);
+      }
+    } else {
+      pointer.active = false;
+      idleShootTimer = Math.min(idleShootTimer, 300);
+    }
+  }
+
   /* ============ Main loop ============ */
   function frame(ts){
     if(!lastTs) lastTs = ts;
@@ -991,25 +1453,39 @@
       const raiderInterval = Math.max(3200 - elapsed*0.03, 1900);
       if(raiderSpawnTimer <= 0){ spawnRaider(); raiderSpawnTimer = raiderInterval * rand(0.8,1.3); }
 
-      updateMice(dt);
-      updateRaiders(dt);
+      // "Spowolnienie czasu" power-up: mice & raiders move in slow motion, archer/arrows stay full speed
+      const moveDt = powerupSlow > 0 ? dt*0.4 : dt;
+      updateMice(moveDt);
+      updateRaiders(moveDt);
       updateArrows(dt);
       updateParticles(dt);
+      updateKingMouse(dt);
+      updateGeese(dt);
+
+      if(powerupTriple > 0) powerupTriple = Math.max(0, powerupTriple - dt*1000);
+      if(powerupSlow   > 0) powerupSlow   = Math.max(0, powerupSlow   - dt*1000);
+      if(powerupPierce > 0) powerupPierce = Math.max(0, powerupPierce - dt*1000);
+      updatePowerupHUD();
 
       timeLeft -= dt;
       if(timeLeft <= 0){ timeLeft = 0; endGame(false); }
       timeVal.textContent = Math.ceil(timeLeft);
+    } else if(state === STATE.MENU){
+      updateIdleDemo(dt);
+      updateParticles(dt);
     } else {
       updateParticles(dt);
     }
 
     ctx.clearRect(0,0,W,H);
     drawBackground();
+    if(kingMouse) drawKingMouse(kingMouse);
+    if(geeseFlock) drawGeeseFlock(geeseFlock);
     for(const m of mice) if(m.alive) drawMouse(m);
     for(const r of raiders) if(r.alive) drawRaider(r);
     drawArrowsShapes();
     drawParticles();
-    if(state===STATE.PLAY) drawArcher();
+    if(state===STATE.PLAY || state===STATE.MENU) drawArcher();
     if(state===STATE.PLAY) drawCrosshair();
 
     requestAnimationFrame(frame);
@@ -1023,8 +1499,8 @@
     const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
     pointer.x = cx; pointer.y = cy; pointer.active = true;
   }
-  canvas.addEventListener('mousemove', (e)=>{ setPointerFromEvent(e); });
-  canvas.addEventListener('touchmove', (e)=>{ setPointerFromEvent(e); }, {passive:true});
+  canvas.addEventListener('mousemove', (e)=>{ if(state===STATE.PLAY) setPointerFromEvent(e); });
+  canvas.addEventListener('touchmove', (e)=>{ if(state===STATE.PLAY) setPointerFromEvent(e); }, {passive:true});
   canvas.addEventListener('mousedown', (e)=>{
     setPointerFromEvent(e);
     if(state===STATE.PLAY) shootAt(pointer.x,pointer.y);
@@ -1045,9 +1521,15 @@
     score = 0; timeLeft = 60; lives = 3; combo = 0; bestCombo = 0; kills = 0;
     elapsed = 0; spawnTimer = 300; mice=[]; arrows=[]; particles=[];
     raiders=[]; raiderSpawnTimer = 2600;
+    kingMouse = null; kingCooldown = rand(9000,14000);
+    geeseFlock = null; geeseCooldown = rand(12000,20000);
+    powerupTriple = 0; powerupSlow = 0; powerupPierce = 0;
     scoreVal.textContent='0'; timeVal.textContent='60';
     renderSacks();
+    updateComboMeter(false);
+    updatePowerupHUD();
     menuScreen.classList.add('hidden');
+    nicknameModal.classList.add('hidden');
     overScreen.classList.add('hidden');
     hud.classList.remove('hidden');
     cloudBoard.classList.remove('hidden');
@@ -1188,15 +1670,44 @@
     return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  function returnToIdle(){
+    state = STATE.MENU;
+    mice = []; arrows = []; particles = []; raiders = [];
+    kingMouse = null; kingCooldown = 4000;
+    geeseFlock = null; geeseCooldown = rand(9000,15000);
+    powerupTriple = 0; powerupSlow = 0; powerupPierce = 0;
+    updatePowerupHUD();
+    pointer.active = false;
+    elapsed = 0; idleSpawnTimer = 0; idleShootTimer = 600;
+    menuScreen.classList.remove('hidden');
+    nicknameModal.classList.add('hidden');
+    cloudBoard.classList.remove('hidden');
+    loadTopScores();
+  }
+
+  playBtn.addEventListener('click', ()=>{
+    menuScreen.classList.add('hidden');
+    nicknameModal.classList.remove('hidden');
+  });
+  modalCloseBtn.addEventListener('click', ()=>{
+    nicknameModal.classList.add('hidden');
+    if(state === STATE.MENU) menuScreen.classList.remove('hidden');
+  });
+  nicknameModal.addEventListener('click', (e)=>{
+    if(e.target === nicknameModal){
+      nicknameModal.classList.add('hidden');
+      if(state === STATE.MENU) menuScreen.classList.remove('hidden');
+    }
+  });
   startBtn.addEventListener('click', startGame);
   nickInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') startGame(); });
   againBtn.addEventListener('click', ()=>{
     overScreen.classList.add('hidden');
-    menuScreen.classList.remove('hidden');
-    nickInput.focus();
+    returnToIdle();
   });
 
   renderSacks();
+  loadTopScores();
   // initial idle background render loop already runs via requestAnimationFrame
 
 })();
