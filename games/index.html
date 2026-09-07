@@ -392,7 +392,25 @@
     canvas.width = W * DPR; canvas.height = H * DPR;
     ctx.setTransform(DPR,0,0,DPR,0,0);
   }
+  // Po fizycznym obrocie telefonu (gdy ma włączony auto-obrót) przeglądarka
+  // potrafi zgłosić 'resize'/'orientationchange' zanim naprawdę zaktualizuje
+  // wymiary okna i przeliczy media query - łapiemy wtedy stare/niestabilne
+  // wartości. Dlatego po takiej zmianie doczytujemy wymiary jeszcze kilka
+  // razy z opóźnieniem, aż wszystko się ustabilizuje.
+  function resizeSettled(){
+    resize();
+    setTimeout(resize, 60);
+    setTimeout(resize, 200);
+    setTimeout(resize, 500);
+  }
   window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', resizeSettled);
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', resizeSettled);
+  }
+  if(screen.orientation && screen.orientation.addEventListener){
+    screen.orientation.addEventListener('change', resizeSettled);
+  }
   resize();
 
   const GROUND_Y = () => H*0.74;
