@@ -3,10 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="screen-orientation" content="landscape">
-<meta name="x5-orientation" content="landscape">
-<meta name="x5-fullscreen" content="true">
-<meta name="full-screen" content="yes">
 <title>Kruszwica - Wyprawa Króla</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -29,18 +25,24 @@
   }
   *{box-sizing:border-box;}
   html,body{
-    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
-    background: linear-gradient(180deg, #1e6fb8 0%, #4fa3dd 45%, #bfe6f7 68%, #6b9b4a 80%, #3f6e30 100%);
+    margin:0; padding:0; width:100%; min-height:100%;
+    background: radial-gradient(ellipse at 50% 0%, #2a3b2f 0%, #16201a 55%, #0c120e 100%);
     font-family:'EB Garamond', serif;
     color:var(--parchment);
     -webkit-tap-highlight-color: transparent;
+  }
+  body{
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; min-height:100dvh;
+    padding:18px 12px 26px;
+    overflow-x:hidden;
   }
 
   /* ---------- Loading screen ---------- */
   #loadingScreen{
     position:fixed; inset:0; z-index:50;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
-    background: linear-gradient(180deg, #1e6fb8 0%, #4fa3dd 45%, #bfe6f7 68%, #6b9b4a 80%, #3f6e30 100%);
+    background: radial-gradient(ellipse at 50% 0%, #2a3b2f 0%, #16201a 55%, #0c120e 100%);
     transition: opacity .5s ease;
   }
   #loadingScreen.fade-out{ opacity:0; pointer-events:none; }
@@ -63,22 +65,127 @@
     animation: loadFill 1.1s ease-in-out forwards;
   }
   @keyframes loadFill{ from{width:6%;} to{width:100%;} }
-  #stage{ position:relative; width:100vw; height:100vh; overflow:hidden; }
+  /* ---------- Obudowa konsoli w stylu Game Boya ----------
+     Orientacja strony NIE jest już wymuszana ani automatycznie obracana -
+     układ (ekran gry na górze, przyciski sterowania pod spodem) działa
+     natywnie w orientacji pionowej, tak jak w prawdziwej konsoli. */
+  #console{
+    position:relative;
+    width:min(94vw, 460px);
+    background: linear-gradient(160deg, #6b5334 0%, var(--wood) 45%, var(--wood-dark) 100%);
+    border-radius:26px 26px 34px 34px;
+    padding:16px 16px 22px;
+    box-shadow:
+      0 24px 60px rgba(0,0,0,0.6),
+      inset 0 2px 0 rgba(255,255,255,0.12),
+      inset 0 -6px 14px rgba(0,0,0,0.35);
+    border:2px solid #2a190f;
+  }
+  @media (min-width:760px){ #console{ width:min(60vw, 520px); } }
+
+  .console-brand{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:2px 8px 10px;
+  }
+  .console-brand .brand-name{
+    font-family:'Cinzel', serif; font-size:clamp(11px,3vw,14px); letter-spacing:.22em;
+    color:var(--gold-bright); text-shadow:0 1px 2px rgba(0,0,0,0.6);
+  }
+  .console-brand .brand-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #ff8a7a, var(--danger-bright) 60%, var(--danger) 100%);
+    box-shadow:0 0 5px rgba(194,74,62,0.9);
+  }
+
+  /* ---------- Ekran (bezel) ---------- */
+  #screenBezel{
+    background: linear-gradient(165deg, #241a10 0%, #140d07 100%);
+    border-radius:10px;
+    padding:14px 12px 16px;
+    box-shadow: inset 0 6px 18px rgba(0,0,0,0.75), inset 0 0 0 2px rgba(201,162,75,0.28);
+  }
+  #stage{
+    position:relative; width:100%; aspect-ratio:4/3;
+    overflow:hidden; border-radius:3px; background:#0a0a0a;
+    box-shadow: inset 0 0 0 2px #000, 0 0 0 1px rgba(201,162,75,0.15);
+    container-type:inline-size; container-name:screen;
+  }
   canvas{ display:block; width:100%; height:100%; touch-action:none; }
 
-  /* ---------- Wymuszony widok poziomy na telefonach/tabletach ----------
-     Klasa 'force-landscape' na <html> jest ustawiana z JS (nie samym CSS
-     media query - różne przeglądarki różnie raportują orientation/pointer/
-     hover, więc samo CSS bywa niewiarygodne). Gdy klasa jest obecna,
-     obracamy całą planszę gry (#stage + #loadingScreen) o 90°, zamieniając
-     wymiary miejscami. Na komputerze klasa nigdy się nie pojawia - działa
-     normalnie. */
-  html.force-landscape, html.force-landscape body{ overflow:hidden; }
-  html.force-landscape #stage, html.force-landscape #loadingScreen{
-    position:fixed !important; top:0 !important; left:0 !important; inset:auto !important;
-    width:100vh !important; height:100vw !important;
-    transform-origin:top left !important;
-    transform:rotate(90deg) translateY(-100%) !important;
+  .screen-label{
+    text-align:center; padding-top:10px;
+    font-family:'Cinzel', serif; font-size:clamp(9px,2.6vw,11px); letter-spacing:.3em;
+    color:var(--gold); opacity:.85;
+  }
+
+  /* ---------- Panel sterowania pod ekranem ---------- */
+  #controlPanel{
+    margin-top:20px; padding:4px 10px 0;
+    display:flex; align-items:flex-start; justify-content:space-between;
+  }
+  .dpad{
+    display:grid; grid-template-columns:repeat(3, clamp(24px,7.5vw,32px));
+    grid-template-rows:repeat(3, clamp(24px,7.5vw,32px));
+    gap:2px; pointer-events:auto;
+  }
+  .dpad-cell{
+    background: linear-gradient(180deg, #241812, #120b07);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .dpad-cell.filled{
+    background: linear-gradient(180deg, #3a2b1c, #1c130c);
+    box-shadow: inset 0 2px 3px rgba(0,0,0,0.6), inset 0 -1px 0 rgba(255,255,255,0.05);
+  }
+  .dpad-cell.active{
+    display:flex; align-items:center; justify-content:center;
+    color:var(--gold-bright); font-size:clamp(11px,3.4vw,14px);
+    cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none;
+  }
+  .dpad-cell.active:active, .dpad-cell.active.pressed{
+    background: linear-gradient(180deg, #1a1108, #2c1f14); transform:scale(.96);
+  }
+  .dpad-up{ grid-column:2; grid-row:1; border-radius:5px 5px 0 0; }
+  .dpad-left{ grid-column:1; grid-row:2; border-radius:5px 0 0 5px; }
+  .dpad-center{ grid-column:2; grid-row:2; }
+  .dpad-right{ grid-column:3; grid-row:2; border-radius:0 5px 5px 0; }
+  .dpad-down{ grid-column:2; grid-row:3; border-radius:0 0 5px 5px; }
+
+  .action-buttons{
+    position:relative; width:clamp(90px,25vw,112px); height:clamp(66px,19vw,82px);
+    margin-top:2px;
+  }
+  .gb-btn{
+    position:absolute; width:clamp(46px,13vw,56px); height:clamp(46px,13vw,56px);
+    border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:clamp(17px,4.6vw,21px); color:#f4e6d8;
+    background: radial-gradient(circle at 35% 28%, #a0483f 0%, var(--danger) 55%, #5e1c1c 100%);
+    box-shadow: 0 4px 0 #3d1414, 0 7px 12px rgba(0,0,0,0.5), inset 0 2px 3px rgba(255,255,255,0.18);
+    cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none;
+  }
+  .gb-btn:active, .gb-btn.pressed{
+    transform:translateY(3px); box-shadow:0 1px 0 #3d1414, 0 3px 6px rgba(0,0,0,0.4), inset 0 2px 3px rgba(255,255,255,0.15);
+  }
+  #btnJump{ top:0; right:0; }
+  #btnShoot{ top:auto; bottom:0; left:0; }
+  .gb-btn .gb-letter{
+    position:absolute; bottom:-15px; left:50%; transform:translateX(-50%);
+    font-family:'Cinzel',serif; font-size:9px; white-space:nowrap;
+    letter-spacing:.08em; color:var(--gold); opacity:.8;
+  }
+
+  .startselect-row{
+    margin-top:22px; padding:0 6px;
+    display:flex; align-items:center; justify-content:center; gap:26px;
+  }
+  .startselect-row .pill-wrap{ display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .pill-btn{
+    width:clamp(34px,10vw,42px); height:11px; border-radius:7px;
+    background:linear-gradient(180deg,#3a2b1c,#1c130c);
+    box-shadow:0 2px 0 rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+    transform:rotate(-16deg);
+  }
+  .pill-label{
+    font-family:'Cinzel',serif; font-size:8px; letter-spacing:.1em; color:var(--gold); opacity:.75;
   }
 
 
@@ -95,19 +202,21 @@
   .plaque{
     position:relative;
     background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
-    border:3px solid var(--wood);
-    box-shadow: 0 0 0 6px var(--wood-dark), 0 20px 50px rgba(0,0,0,0.55), inset 0 0 30px rgba(74,46,30,0.25);
-    border-radius:6px;
-    padding:36px 42px;
-    max-width:520px;
-    width:92%;
+    border:2px solid var(--wood);
+    box-shadow: 0 0 0 3px var(--wood-dark), 0 10px 24px rgba(0,0,0,0.55), inset 0 0 16px rgba(74,46,30,0.25);
+    border-radius:5px;
+    padding:5cqw 5.5cqw;
+    max-width:100%;
+    width:94%;
+    max-height:92%;
+    overflow-y:auto;
     color:var(--ink);
   }
   .modal-close{
-    position:absolute; top:8px; right:10px;
-    width:30px; height:30px; border-radius:50%;
+    position:absolute; top:4px; right:5px;
+    width:5.5cqw; height:5.5cqw; min-width:18px; min-height:18px; border-radius:50%;
     border:none; background:rgba(74,46,30,0.12);
-    color:var(--wood); font-family:'Cinzel',serif; font-size:18px; line-height:1;
+    color:var(--wood); font-family:'Cinzel',serif; font-size:clamp(11px,3cqw,15px); line-height:1;
     cursor:pointer;
   }
   .modal-close:hover{ background:rgba(74,46,30,0.22); }
@@ -118,152 +227,114 @@
     display:flex; align-items:center; justify-content:center;
     pointer-events:none;
   }
-  .cta-stack{ display:flex; flex-direction:column; align-items:center; gap:14px; pointer-events:auto; max-width:92vw; }
-  .logo-row{ display:flex; flex-direction:row; align-items:center; justify-content:center; gap:18px; flex-wrap:nowrap; animation: fadeIn .6s ease; }
-  .logo-img{ height:56px; max-height:9vh; width:auto; max-width:38vw; object-fit:contain; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.55)); }
+  .cta-stack{ display:flex; flex-direction:column; align-items:center; gap:2cqw; pointer-events:auto; max-width:92%; }
+  .logo-row{ display:flex; flex-direction:row; align-items:center; justify-content:center; gap:3cqw; flex-wrap:nowrap; animation: fadeIn .6s ease; }
+  .logo-img{ height:auto; max-height:9cqw; width:auto; max-width:34cqw; object-fit:contain; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.55)); }
   .cta-box{
     pointer-events:auto; text-align:center;
     background:linear-gradient(180deg, rgba(42,29,18,0.85), rgba(20,13,7,0.88));
-    border:1px solid var(--gold); border-radius:10px; padding:20px 36px 26px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.5); animation: fadeIn .6s ease;
+    border:1px solid var(--gold); border-radius:8px; padding:3.5cqw 5cqw 4.5cqw;
+    box-shadow:0 8px 20px rgba(0,0,0,0.5); animation: fadeIn .6s ease;
   }
   .cta-box .eyebrow{ color:var(--gold-bright); opacity:.9; }
   .cta-title{
-    font-family:'Cinzel', serif; font-size:clamp(20px, 4vw, 30px); margin:0 0 16px; line-height:1.2;
+    font-family:'Cinzel', serif; font-size:clamp(11px, 4.2cqw, 20px); margin:0 0 2cqw; line-height:1.2;
     color:var(--parchment); text-shadow:0 2px 10px rgba(0,0,0,0.6);
   }
-  #playBtn{ font-size:20px; padding:16px 48px; margin-top:0; }
-  @media (max-width:520px){
-    .logo-row{ gap:12px; } .logo-img{ height:42px; max-height:7vh; }
-    .cta-box{ padding:16px 22px 20px; } #playBtn{ font-size:17px; padding:14px 36px; }
-  }
+  #playBtn{ font-size:clamp(9px,3.4cqw,15px); padding:2.4cqw 6cqw; margin-top:0; }
   .eyebrow{
-    font-family:'Cinzel', serif; letter-spacing:.28em; text-transform:uppercase;
-    font-size:12px; color:var(--danger); margin:0 0 6px;
+    font-family:'Cinzel', serif; letter-spacing:.22em; text-transform:uppercase;
+    font-size:clamp(6px,1.8cqw,9px); color:var(--danger); margin:0 0 1.4cqw;
   }
   h1{
-    font-family:'Cinzel', serif; font-size:clamp(26px, 5vw, 38px); margin:0 0 10px; line-height:1.15;
+    font-family:'Cinzel', serif; font-size:clamp(12px, 5cqw, 22px); margin:0 0 1.4cqw; line-height:1.15;
     color:var(--wood); text-shadow: 0 1px 0 rgba(255,255,255,0.3);
   }
   .legend{
-    font-size:16px; line-height:1.55; font-style:italic; color:#3a2a18; margin: 0 0 20px;
-    border-top:1px solid rgba(74,46,30,0.3); border-bottom:1px solid rgba(74,46,30,0.3); padding:14px 4px;
+    font-size:clamp(7.5px,2.4cqw,11px); line-height:1.5; font-style:italic; color:#3a2a18; margin: 0 0 2.5cqw;
+    border-top:1px solid rgba(74,46,30,0.3); border-bottom:1px solid rgba(74,46,30,0.3); padding:2cqw 1px;
   }
   label.nick-label{
-    display:block; font-family:'Cinzel',serif; font-size:12px; letter-spacing:.14em;
-    text-transform:uppercase; margin-bottom:8px; color:var(--wood);
+    display:block; font-family:'Cinzel',serif; font-size:clamp(6px,1.7cqw,8.5px); letter-spacing:.12em;
+    text-transform:uppercase; margin-bottom:1cqw; color:var(--wood);
   }
   #nickInput{
-    width:100%; font-family:'EB Garamond', serif; font-size:19px; text-align:center;
-    padding:11px 14px; border-radius:4px; border:2px solid var(--wood);
+    width:100%; font-family:'EB Garamond', serif; font-size:clamp(10px,2.8cqw,13px); text-align:center;
+    padding:1.6cqw 2cqw; border-radius:4px; border:2px solid var(--wood);
     background:#fbf6e8; color:var(--ink); outline:none;
   }
   #nickInput:focus{ border-color:var(--danger); box-shadow:0 0 0 3px rgba(139,46,46,0.18); }
   .btn{
-    font-family:'Cinzel', serif; letter-spacing:.06em; font-size:16px; padding:13px 30px; margin-top:20px;
+    font-family:'Cinzel', serif; letter-spacing:.05em; font-size:clamp(9px,2.6cqw,12px); padding:2cqw 4.5cqw; margin-top:2.5cqw;
     border:none; border-radius:4px; background: linear-gradient(180deg, var(--gold-bright), var(--gold));
     color:#3a2408; font-weight:700; cursor:pointer;
-    box-shadow: 0 4px 0 #8a6d2e, 0 8px 16px rgba(0,0,0,0.35);
+    box-shadow: 0 3px 0 #8a6d2e, 0 6px 12px rgba(0,0,0,0.35);
     transition: transform .08s ease, box-shadow .08s ease;
   }
-  .btn:active{ transform:translateY(4px); box-shadow:0 0px 0 #8a6d2e, 0 3px 8px rgba(0,0,0,0.3); }
-  .hint{ font-size:13px; margin-top:16px; color:#5a4429; }
+  .btn:active{ transform:translateY(3px); box-shadow:0 0px 0 #8a6d2e, 0 2px 6px rgba(0,0,0,0.3); }
+  .hint{ font-size:clamp(6.5px,1.9cqw,9px); margin-top:2cqw; color:#5a4429; }
 
   /* ---------- HUD ---------- */
   #hud{
     position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between;
-    align-items:flex-start; padding:14px 18px; pointer-events:none; z-index:5;
+    align-items:flex-start; padding:6px 7px; pointer-events:none; z-index:5;
   }
   .hud-box{
     background:linear-gradient(180deg, rgba(42,29,18,0.82), rgba(24,16,9,0.82));
-    border:1px solid var(--gold); border-radius:6px; padding:8px 14px;
-    font-family:'Cinzel', serif; font-size:13px; letter-spacing:.05em;
-    box-shadow:0 4px 10px rgba(0,0,0,0.4);
+    border:1px solid var(--gold); border-radius:4px; padding:3px 6px;
+    font-family:'Cinzel', serif; font-size:clamp(6px,1.9vw,8px); letter-spacing:.04em;
+    box-shadow:0 3px 6px rgba(0,0,0,0.4);
   }
-  .hud-box .val{ font-size:20px; color:#ffffff; display:block; margin-top:2px; text-shadow:0 2px 6px rgba(0,0,0,0.6); }
-  #hearts{ display:flex; gap:5px; margin-top:5px; font-size:19px; line-height:1; }
+  .hud-box .val{ font-size:clamp(9px,3vw,12px); color:#ffffff; display:block; margin-top:1px; text-shadow:0 2px 6px rgba(0,0,0,0.6); }
+  #hearts{ display:flex; gap:2px; margin-top:2px; font-size:clamp(8px,2.6vw,11px); line-height:1; }
   #hearts span{ transition:opacity .25s, transform .25s; }
   #hearts span.lost{ opacity:.22; transform:scale(.8); filter:grayscale(1); }
   #shieldIndicator{
-    margin-top:4px; font-size:12px; font-family:'Cinzel',serif; letter-spacing:.04em;
+    margin-top:2px; font-size:clamp(6px,1.8vw,7px); font-family:'Cinzel',serif; letter-spacing:.03em;
     color:#ffe08c; text-shadow:0 2px 6px rgba(0,0,0,0.7);
   }
   .dist-track{
-    width:110px; height:8px; border-radius:5px; overflow:hidden; margin-top:6px;
+    width:clamp(38px,14vw,52px); height:5px; border-radius:4px; overflow:hidden; margin-top:3px;
     background:rgba(255,255,255,0.18); border:1px solid rgba(232,200,118,0.4); position:relative;
   }
   .dist-fill{ height:100%; width:0%; background:linear-gradient(90deg, var(--gold), var(--gold-bright)); }
-  @media (max-width:520px){
-    .hud-box{ padding:6px 10px; font-size:11px; } .hud-box .val{ font-size:16px; }
-    #hearts{ font-size:15px; } .dist-track{ width:74px; }
-  }
 
   /* ---------- Combo badge ---------- */
   #comboBadge{
-    position:absolute; top:74px; left:50%; z-index:5;
+    position:absolute; top:28%; left:50%; z-index:5;
     transform:translateX(-50%) scale(0.75); pointer-events:none;
-    font-family:'Cinzel', serif; font-weight:700; font-size:22px; letter-spacing:.03em;
+    font-family:'Cinzel', serif; font-weight:700; font-size:clamp(11px,3.4vw,15px); letter-spacing:.02em;
     color:#ffe9a8; text-shadow:0 2px 10px rgba(0,0,0,0.75), 0 0 20px rgba(232,200,118,0.65);
     opacity:0; transition: opacity .16s ease, transform .16s ease;
     white-space:nowrap;
   }
   #comboBadge.show{ opacity:1; transform:translateX(-50%) scale(1); }
-  @media (max-width:520px){ #comboBadge{ top:60px; font-size:16px; } }
-
-  /* ---------- On-screen touch controls ---------- */
-  #controls{
-    position:absolute; inset:0; z-index:6; pointer-events:none;
-  }
-  .ctrl-btn{
-    position:absolute; pointer-events:auto; user-select:none;
-    display:flex; align-items:center; justify-content:center;
-    width:64px; height:64px; border-radius:50%;
-    background:linear-gradient(180deg, rgba(42,29,18,0.75), rgba(20,13,7,0.8));
-    border:2px solid var(--gold); color:var(--gold-bright);
-    font-size:26px; box-shadow:0 4px 10px rgba(0,0,0,0.4);
-    -webkit-tap-highlight-color: transparent;
-  }
-  .ctrl-btn:active, .ctrl-btn.pressed{ background:linear-gradient(180deg, rgba(80,55,30,0.9), rgba(30,20,10,0.9)); transform:scale(.94); }
-  #btnLeft{ left:18px; bottom:34px; }
-  #btnRight{ left:96px; bottom:34px; }
-  #btnJump{ right:96px; bottom:34px; }
-  #btnShoot{ right:18px; bottom:34px; }
-  @media (max-width:480px){
-    .ctrl-btn{ width:54px; height:54px; font-size:21px; }
-    #btnLeft{ left:12px; bottom:22px; } #btnRight{ left:76px; bottom:22px; }
-    #btnJump{ right:76px; bottom:22px; } #btnShoot{ right:12px; bottom:22px; }
-  }
 
   #results{ text-align:left; }
-  #results table{ width:100%; border-collapse:collapse; margin-top:6px; font-size:15px;}
-  #results td{ padding:4px 6px; border-bottom:1px solid rgba(74,46,30,0.2); }
+  #results table{ width:100%; border-collapse:collapse; margin-top:1.5cqw; font-size:clamp(8px,2.4cqw,11px);}
+  #results td{ padding:1cqw 1.4cqw; border-bottom:1px solid rgba(74,46,30,0.2); }
   #results tr.me{ background:rgba(201,162,75,0.28); font-weight:600; }
-  #results .rank{ width:26px; color:var(--danger); font-family:'Cinzel',serif; }
+  #results .rank{ width:18px; color:var(--danger); font-family:'Cinzel',serif; }
 
   /* ---------- In-game TOP 5 leaderboard ---------- */
   #cloudBoard{
-    position:absolute; top:120px; right:18px; z-index:5;
-    display:flex; flex-direction:column; align-items:flex-end; gap:4px;
-    pointer-events:none; max-width:50vw; text-align:right;
+    position:absolute; top:17%; right:4px; z-index:5;
+    display:flex; flex-direction:column; align-items:flex-end; gap:1px;
+    pointer-events:none; max-width:34%; text-align:right;
   }
   #cloudBoard .cb-title{
-    font-family:'Cinzel',serif; font-size:11px; letter-spacing:.18em; text-transform:uppercase;
-    color:#ffffff; text-shadow:0 2px 6px rgba(0,0,0,0.75); margin-bottom:4px; opacity:.9;
+    font-family:'Cinzel',serif; font-size:clamp(6px,1.7vw,7px); letter-spacing:.12em; text-transform:uppercase;
+    color:#ffffff; text-shadow:0 2px 6px rgba(0,0,0,0.75); margin-bottom:2px; opacity:.9;
   }
   .cb-title-inline{
-    font-family:'Cinzel',serif; font-size:10px; letter-spacing:.14em; text-transform:uppercase;
-    color:#ffe9b0; opacity:.85; margin-right:10px;
+    font-family:'Cinzel',serif; font-size:clamp(6px,1.6vw,6.5px); letter-spacing:.1em; text-transform:uppercase;
+    color:#ffe9b0; opacity:.85; margin-right:6px;
   }
-  .score-row{ font-family:'EB Garamond', serif; font-size:15px; color:#ffffff; text-shadow:0 2px 6px rgba(0,0,0,0.75); text-align:right; white-space:nowrap; }
-  .score-row .cb-rank{ font-family:'Cinzel',serif; color:#ffe9b0; margin-right:6px; }
-  .score-row .cb-score{ font-weight:700; margin-left:8px; }
+  .score-row{ font-family:'EB Garamond', serif; font-size:clamp(7px,2.2vw,9.5px); color:#ffffff; text-shadow:0 2px 6px rgba(0,0,0,0.75); text-align:right; white-space:nowrap; }
+  .score-row .cb-rank{ font-family:'Cinzel',serif; color:#ffe9b0; margin-right:4px; }
+  .score-row .cb-score{ font-weight:700; margin-left:5px; }
   .score-row.me{ color:var(--gold-bright); font-weight:700; }
-  .score-row.empty{ opacity:.7; font-style:italic; font-size:13px; }
-  @media (max-width:640px){
-    #cloudBoard{ top:98px; right:10px; gap:2px; max-width:56vw; }
-    .score-row{ font-size:12.5px; } #cloudBoard .cb-title{ font-size:9px; } .cb-title-inline{ font-size:8.5px; margin-right:6px; }
-  }
-  @media (max-width:520px){ .plaque{ padding:26px 20px; } h1{ font-size:22px; } .legend{ font-size:14.5px; } }
+  .score-row.empty{ opacity:.7; font-style:italic; font-size:7px; }
 </style>
 </head>
 <body>
@@ -272,86 +343,109 @@
   <div class="loading-text">Ładowanie…</div>
   <div class="loading-bar-track"><div class="loading-bar-fill"></div></div>
 </div>
-<div id="stage">
-  <canvas id="game"></canvas>
-
-  <!-- HUD during gameplay -->
-  <div id="hud" class="hidden">
-    <div class="hud-box">
-      ŁUP<span class="val" id="scoreVal">0</span>
-    </div>
-    <div class="hud-box" style="text-align:center;">
-      ŻYCIA
-      <div id="hearts"><span>❤</span><span>❤</span><span>❤</span></div>
-      <div id="shieldIndicator" class="hidden"></div>
-    </div>
-    <div class="hud-box" style="text-align:right;">
-      DO ZAMKU
-      <div class="dist-track"><div class="dist-fill" id="distFill"></div></div>
-    </div>
+<div id="console">
+  <div class="console-brand">
+    <span class="brand-name">Kruszwica</span>
+    <span class="brand-dot"></span>
   </div>
 
-  <!-- Combo badge -->
-  <div id="comboBadge"><span id="comboText"></span></div>
+  <div id="screenBezel">
+    <div id="stage">
+      <canvas id="game"></canvas>
 
-  <!-- Touch/mouse controls -->
+      <!-- HUD during gameplay -->
+      <div id="hud" class="hidden">
+        <div class="hud-box">
+          ŁUP<span class="val" id="scoreVal">0</span>
+        </div>
+        <div class="hud-box" style="text-align:center;">
+          ŻYCIA
+          <div id="hearts"><span>❤</span><span>❤</span><span>❤</span></div>
+          <div id="shieldIndicator" class="hidden"></div>
+        </div>
+        <div class="hud-box" style="text-align:right;">
+          DO ZAMKU
+          <div class="dist-track"><div class="dist-fill" id="distFill"></div></div>
+        </div>
+      </div>
+
+      <!-- Combo badge -->
+      <div id="comboBadge"><span id="comboText"></span></div>
+
+      <div id="cloudBoard"></div>
+
+      <!-- Idle attract screen -->
+      <div class="cta-wrap" id="menuScreen">
+        <div class="cta-stack">
+          <div class="logo-row">
+            <img class="logo-img" src="https://www.kruszwicasercekujaw.pl/assets/logo.png" alt="Kruszwica - Serce Kujaw">
+            <img class="logo-img" src="https://www.kruszwicasercekujaw.pl/assets/goplanie.png" alt="Gopłanie">
+          </div>
+          <div class="cta-box">
+            <p class="eyebrow">Rok Pański 965, brzeg jeziora Gopło</p>
+            <h1 class="cta-title">Kruszwica<br>Wyprawa Króla</h1>
+            <button class="btn" id="playBtn">▶ Graj</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nickname popup -->
+      <div class="overlay hidden" id="nicknameModal">
+        <div class="plaque">
+          <button class="modal-close" id="modalCloseBtn" aria-label="Zamknij">×</button>
+          <p class="eyebrow">Rok Pański 965, brzeg jeziora Gopło</p>
+          <h1>Zanim ruszysz w drogę</h1>
+          <p class="legend">
+            Legenda głosi, że w zamczysku na wyspie ukarano niegdyś okrutnego księcia Popiela -
+            zjedzony został żywcem przez myszy, a jego imienia strzegły odtąd kruki, od których
+            wzięła nazwę Kruszwica. Jako prawowity Król wyrusz, by odzyskać zamek:
+            biegnij, skacz po murkach, rozbijaj skrzynie z łupem i przepędzaj gryzonie,
+            które zagradzają Ci drogę. Uważaj na przepaść, ostre kolce, kruki lecące
+            tuż nad ziemią i kołyszące się nisko wahadła strażnicze - każde z nich odbierze Ci życie!
+            U bram Mysiej Wieży czeka też strażnik z łukiem - pokonaj go strzałami, zanim on trafi Ciebie.
+            Uwaga: fortuna jest zmienna - ten sam czyn może przynieść raz grosze, a raz królewski skarb!
+          </p>
+          <label class="nick-label" for="nickInput">Podaj swe imię, królu</label>
+          <input id="nickInput" type="text" maxlength="16" placeholder="np. Piast" autocomplete="off">
+          <div><button class="btn" id="startBtn">Rozpocznij wyprawę</button></div>
+          <p class="hint">Sterowanie: krzyżak - bieg, A - skok, B - strzał (na komputerze: strzałki/AD, spacja/W, X).</p>
+        </div>
+      </div>
+
+      <!-- End screen -->
+      <div class="overlay hidden" id="overScreen">
+        <div class="plaque" id="results">
+          <p class="eyebrow" id="overEyebrow">Wyprawa dobiegła końca</p>
+          <h1 id="overTitle">Dotarłeś do zamku!</h1>
+          <p class="legend" id="overText"></p>
+          <table id="leaderboard"></table>
+          <div style="text-align:center;">
+            <button class="btn" id="againBtn">Zagraj ponownie</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Kruszwica ★ Wyprawa Króla</div>
+  </div>
+
+  <!-- Panel sterowania pod ekranem, w stylu Game Boya -->
   <div id="controls" class="hidden">
-    <div class="ctrl-btn" id="btnLeft">◀</div>
-    <div class="ctrl-btn" id="btnRight">▶</div>
-    <div class="ctrl-btn" id="btnJump">⤒</div>
-    <div class="ctrl-btn" id="btnShoot">✨</div>
-  </div>
-
-  <div id="cloudBoard"></div>
-
-  <!-- Idle attract screen -->
-  <div class="cta-wrap" id="menuScreen">
-    <div class="cta-stack">
-      <div class="logo-row">
-        <img class="logo-img" src="https://www.kruszwicasercekujaw.pl/assets/logo.png" alt="Kruszwica - Serce Kujaw">
-        <img class="logo-img" src="https://www.kruszwicasercekujaw.pl/assets/goplanie.png" alt="Gopłanie">
+    <div id="controlPanel">
+      <div class="dpad" aria-hidden="false">
+        <div class="dpad-cell filled dpad-up"></div>
+        <div class="dpad-cell filled dpad-left active" id="btnLeft">◀</div>
+        <div class="dpad-cell dpad-center"></div>
+        <div class="dpad-cell filled dpad-right active" id="btnRight">▶</div>
+        <div class="dpad-cell filled dpad-down"></div>
       </div>
-      <div class="cta-box">
-        <p class="eyebrow">Rok Pański 965, brzeg jeziora Gopło</p>
-        <h1 class="cta-title">Kruszwica<br>Wyprawa Króla</h1>
-        <button class="btn" id="playBtn">▶ Graj</button>
+      <div class="action-buttons">
+        <div class="gb-btn" id="btnJump">⤒<span class="gb-letter">A</span></div>
+        <div class="gb-btn" id="btnShoot">✨<span class="gb-letter">B</span></div>
       </div>
     </div>
-  </div>
-
-  <!-- Nickname popup -->
-  <div class="overlay hidden" id="nicknameModal">
-    <div class="plaque">
-      <button class="modal-close" id="modalCloseBtn" aria-label="Zamknij">×</button>
-      <p class="eyebrow">Rok Pański 965, brzeg jeziora Gopło</p>
-      <h1>Zanim ruszysz w drogę</h1>
-      <p class="legend">
-        Legenda głosi, że w zamczysku na wyspie ukarano niegdyś okrutnego księcia Popiela -
-        zjedzony został żywcem przez myszy, a jego imienia strzegły odtąd kruki, od których
-        wzięła nazwę Kruszwica. Jako prawowity Król wyrusz, by odzyskać zamek:
-        biegnij, skacz po murkach, rozbijaj skrzynie z łupem i przepędzaj gryzonie,
-        które zagradzają Ci drogę. Uważaj na przepaść, ostre kolce, kruki lecące
-        tuż nad ziemią i kołyszące się nisko wahadła strażnicze - każde z nich odbierze Ci życie!
-        U bram Mysiej Wieży czeka też strażnik z łukiem - pokonaj go strzałami, zanim on trafi Ciebie.
-        Uwaga: fortuna jest zmienna - ten sam czyn może przynieść raz grosze, a raz królewski skarb!
-      </p>
-      <label class="nick-label" for="nickInput">Podaj swe imię, królu</label>
-      <input id="nickInput" type="text" maxlength="16" placeholder="np. Piast" autocomplete="off">
-      <div><button class="btn" id="startBtn">Rozpocznij wyprawę</button></div>
-      <p class="hint">Sterowanie: strzałki/A D - bieg, spacja/W - skok, X - strzał. Na telefonie użyj przycisków na ekranie.</p>
-    </div>
-  </div>
-
-  <!-- End screen -->
-  <div class="overlay hidden" id="overScreen">
-    <div class="plaque" id="results">
-      <p class="eyebrow" id="overEyebrow">Wyprawa dobiegła końca</p>
-      <h1 id="overTitle">Dotarłeś do zamku!</h1>
-      <p class="legend" id="overText"></p>
-      <table id="leaderboard"></table>
-      <div style="text-align:center;">
-        <button class="btn" id="againBtn">Zagraj ponownie</button>
-      </div>
+    <div class="startselect-row">
+      <div class="pill-wrap"><div class="pill-btn"></div><span class="pill-label">SELECT</span></div>
+      <div class="pill-wrap"><div class="pill-btn"></div><span class="pill-label">START</span></div>
     </div>
   </div>
 </div>
@@ -392,39 +486,22 @@
     canvas.width = W * DPR; canvas.height = H * DPR;
     ctx.setTransform(DPR,0,0,DPR,0,0);
   }
-  // Wykrywanie ekranu dotykowego - kilka metod naraz, bo różne przeglądarki
-  // wspierają różne API.
-  const isTouchDevice = ('ontouchstart' in window) ||
-    (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
-    (window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
-
-  // Ustawia/usuwa klasę wymuszającą obrócony widok, na podstawie AKTUALNYCH
-  // wymiarów okna (nie polegamy tu na CSS media query 'orientation', bo
-  // bywa niewiarygodne przy auto-obrocie telefonu).
-  function updateForceLandscape(){
-    const isPortrait = window.innerWidth < window.innerHeight;
-    document.documentElement.classList.toggle('force-landscape', isTouchDevice && isPortrait);
-  }
-  // Po fizycznym obrocie telefonu (gdy ma włączony auto-obrót) przeglądarka
-  // potrafi zgłosić 'resize'/'orientationchange' zanim naprawdę zaktualizuje
-  // wymiary okna - łapiemy wtedy stare/niestabilne wartości. Dlatego po
-  // takiej zmianie doczytujemy wymiary jeszcze kilka razy z opóźnieniem,
-  // aż wszystko się ustabilizuje.
+  // Orientacja strony nie jest już wymuszana ani automatycznie obracana -
+  // ekran gry ma stały układ (4:3) wewnątrz obudowy konsoli i skaluje się
+  // naturalnie wraz z rozmiarem okna, niezależnie od orientacji urządzenia.
+  // Po zmianie rozmiaru/orientacji odczytujemy wymiary jeszcze kilka razy
+  // z opóźnieniem, bo niektóre przeglądarki chwilę potrzebują na ustabilizowanie ich.
   function resizeSettled(){
-    updateForceLandscape(); resize();
-    setTimeout(()=>{ updateForceLandscape(); resize(); }, 60);
-    setTimeout(()=>{ updateForceLandscape(); resize(); }, 200);
-    setTimeout(()=>{ updateForceLandscape(); resize(); }, 500);
+    resize();
+    setTimeout(resize, 60);
+    setTimeout(resize, 200);
+    setTimeout(resize, 500);
   }
   window.addEventListener('resize', resizeSettled);
   window.addEventListener('orientationchange', resizeSettled);
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize', resizeSettled);
   }
-  if(screen.orientation && screen.orientation.addEventListener){
-    screen.orientation.addEventListener('change', resizeSettled);
-  }
-  updateForceLandscape();
   resize();
 
   const GROUND_Y = () => H*0.74;
