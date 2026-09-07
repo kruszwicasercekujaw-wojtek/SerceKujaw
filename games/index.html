@@ -67,20 +67,20 @@
   canvas{ display:block; width:100%; height:100%; touch-action:none; }
 
   /* ---------- Wymuszony widok poziomy na telefonach/tabletach ----------
-     Na urządzeniach dotykowych trzymanych pionowo obracamy całą planszę
-     gry (#stage + #loadingScreen) o 90°, zamieniając wymiary miejscami,
-     tak by gra zawsze wyglądała i działała jak w orientacji poziomej -
-     bez potrzeby ręcznego obracania telefonu. Na komputerze (mysz,
-     pointer:fine) ten blok się nie uruchamia - działa normalnie. */
-  @media screen and (orientation:portrait) and (pointer:coarse) and (hover:none){
-    html, body{ overflow:hidden; }
-    #stage, #loadingScreen{
-      position:fixed; top:0; left:0; inset:auto;
-      width:100vh; height:100vw;
-      transform-origin:top left;
-      transform:rotate(90deg) translateY(-100%);
-    }
+     Klasa 'force-landscape' na <html> jest ustawiana z JS (nie samym CSS
+     media query - różne przeglądarki różnie raportują orientation/pointer/
+     hover, więc samo CSS bywa niewiarygodne). Gdy klasa jest obecna,
+     obracamy całą planszę gry (#stage + #loadingScreen) o 90°, zamieniając
+     wymiary miejscami. Na komputerze klasa nigdy się nie pojawia - działa
+     normalnie. */
+  html.force-landscape, html.force-landscape body{ overflow:hidden; }
+  html.force-landscape #stage, html.force-landscape #loadingScreen{
+    position:fixed !important; top:0 !important; left:0 !important; inset:auto !important;
+    width:100vh !important; height:100vw !important;
+    transform-origin:top left !important;
+    transform:rotate(90deg) translateY(-100%) !important;
   }
+
 
   /* ---------- Overlays ---------- */
   .overlay{
@@ -392,18 +392,31 @@
     canvas.width = W * DPR; canvas.height = H * DPR;
     ctx.setTransform(DPR,0,0,DPR,0,0);
   }
+  // Wykrywanie ekranu dotykowego - kilka metod naraz, bo różne przeglądarki
+  // wspierają różne API.
+  const isTouchDevice = ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+    (window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
+
+  // Ustawia/usuwa klasę wymuszającą obrócony widok, na podstawie AKTUALNYCH
+  // wymiarów okna (nie polegamy tu na CSS media query 'orientation', bo
+  // bywa niewiarygodne przy auto-obrocie telefonu).
+  function updateForceLandscape(){
+    const isPortrait = window.innerWidth < window.innerHeight;
+    document.documentElement.classList.toggle('force-landscape', isTouchDevice && isPortrait);
+  }
   // Po fizycznym obrocie telefonu (gdy ma włączony auto-obrót) przeglądarka
   // potrafi zgłosić 'resize'/'orientationchange' zanim naprawdę zaktualizuje
-  // wymiary okna i przeliczy media query - łapiemy wtedy stare/niestabilne
-  // wartości. Dlatego po takiej zmianie doczytujemy wymiary jeszcze kilka
-  // razy z opóźnieniem, aż wszystko się ustabilizuje.
+  // wymiary okna - łapiemy wtedy stare/niestabilne wartości. Dlatego po
+  // takiej zmianie doczytujemy wymiary jeszcze kilka razy z opóźnieniem,
+  // aż wszystko się ustabilizuje.
   function resizeSettled(){
-    resize();
-    setTimeout(resize, 60);
-    setTimeout(resize, 200);
-    setTimeout(resize, 500);
+    updateForceLandscape(); resize();
+    setTimeout(()=>{ updateForceLandscape(); resize(); }, 60);
+    setTimeout(()=>{ updateForceLandscape(); resize(); }, 200);
+    setTimeout(()=>{ updateForceLandscape(); resize(); }, 500);
   }
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', resizeSettled);
   window.addEventListener('orientationchange', resizeSettled);
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize', resizeSettled);
@@ -411,6 +424,7 @@
   if(screen.orientation && screen.orientation.addEventListener){
     screen.orientation.addEventListener('change', resizeSettled);
   }
+  updateForceLandscape();
   resize();
 
   const GROUND_Y = () => H*0.74;
