@@ -315,6 +315,30 @@
     font-size:clamp(7.5px,2.4cqw,11px); line-height:1.5; font-style:italic; color:#3a2a18; margin: 0 0 2.5cqw;
     border-top:1px solid rgba(74,46,30,0.3); border-bottom:1px solid rgba(74,46,30,0.3); padding:2cqw 1px;
   }
+
+  /* ---------- Podsumowanie punktów bonusowych (strzały / serca) ---------- */
+  #bonusBreakdown{
+    margin: 0 0 2.5cqw; padding:2.2cqw 2.6cqw;
+    background: linear-gradient(180deg, rgba(74,46,30,0.08), rgba(74,46,30,0.04));
+    border:1px solid rgba(74,46,30,0.35); border-radius:6px;
+  }
+  #bonusBreakdown .bb-title{
+    font-family:'Cinzel', serif; font-size:clamp(6.5px,1.8cqw,9px); letter-spacing:.14em; text-transform:uppercase;
+    color:var(--wood); opacity:.85; margin:0 0 1.6cqw; text-align:center;
+  }
+  .bb-row{
+    display:flex; align-items:center; gap:1.6cqw;
+    font-size:clamp(7.5px,2.2cqw,10.5px); color:var(--ink);
+    padding:1.1cqw 0;
+  }
+  .bb-row + .bb-row{ border-top:1px dashed rgba(74,46,30,0.25); }
+  .bb-row-total{ margin-top:.4cqw; padding-top:1.5cqw; border-top:2px solid rgba(74,46,30,0.45) !important; font-weight:700; }
+  .bb-row-total .bb-label{ color:var(--wood); }
+  .bb-row-total .bb-total{ color:var(--wood); font-size:1.15em; }
+  .bb-icon{ font-size:clamp(11px,3.4cqw,16px); flex:none; width:1.6em; text-align:center; }
+  .bb-label{ flex:1; text-align:left; white-space:nowrap; }
+  .bb-math{ flex:none; color:#5a4429; font-style:italic; }
+  .bb-total{ flex:none; font-weight:700; color:var(--danger); min-width:3.6em; text-align:right; }
   label.nick-label{
     display:block; font-family:'Cinzel',serif; font-size:clamp(6px,1.7cqw,8.5px); letter-spacing:.12em;
     text-transform:uppercase; margin-bottom:1cqw; color:var(--wood);
@@ -529,6 +553,7 @@
           <p class="eyebrow" id="overEyebrow">Wyprawa dobiegła końca</p>
           <h1 id="overTitle">Dotarłeś do zamku!</h1>
           <p class="legend" id="overText"></p>
+          <div id="bonusBreakdown" class="hidden"></div>
           <table id="leaderboard"></table>
           <div style="text-align:center;">
             <button class="btn" id="againBtn">Zagraj ponownie</button>
@@ -747,6 +772,8 @@
   const PLAYER_W = 28, PLAYER_H = 46;
   const BLOCK = 42;
   const COMBO_WINDOW = 1800, COMBO_MAX_MULT = 5;
+  const ARROW_BONUS_PTS = 15;   // pkt za każdą zachowaną strzałę po dotarciu do zamku
+  const HEART_BONUS_PTS = 20;   // pkt za każde zachowane życie po dotarciu do zamku
 
   let nickname = 'Król';
   let score = 0, lives = 3, kills = 0, ammo = 5;
@@ -3421,6 +3448,20 @@
     const overTitle = document.getElementById('overTitle');
     const overText = document.getElementById('overText');
     const overEyebrow = document.getElementById('overEyebrow');
+    const bonusBox = document.getElementById('bonusBreakdown');
+
+    // Punkty bonusowe za zachowane strzały i serca - liczone tylko wtedy,
+    // gdy Król dotarł do zamku (win===true). Uciekinier bez życia (win===false)
+    // ma i tak lives===0, więc bonus za serca i tak by wyniósł 0.
+    const baseScore = score; // punkty zebrane w trakcie samej rozgrywki (bez bonusu)
+    let arrowBonus = 0, heartBonus = 0;
+    if(win){
+      arrowBonus = ammo * ARROW_BONUS_PTS;
+      heartBonus = lives * HEART_BONUS_PTS;
+      score += arrowBonus + heartBonus;
+      scoreVal.textContent = score;
+    }
+
     if(win){
       overEyebrow.textContent = 'Cel osiągnięty';
       overTitle.textContent = 'Dotarłeś do zamku!';
@@ -3430,6 +3471,23 @@
       overTitle.textContent = 'Zabrakło sił...';
       overText.textContent = `Przepaści i myszy okazały się zbyt groźne. Zdążyłeś przepędzić ${kills} myszy i zebrać ${score} pkt, zanim siły Cię opuściły.`;
     }
+
+    if(win){
+      let rows = `<div class="bb-row"><span class="bb-icon">💰</span><span class="bb-label">Punkty za rozgrywkę</span><span class="bb-math"></span><span class="bb-total">${baseScore}</span></div>`;
+      if(ammo > 0){
+        rows += `<div class="bb-row"><span class="bb-icon">🏹</span><span class="bb-label">Bonus za strzały: ${ammo}</span><span class="bb-math">× ${ARROW_BONUS_PTS} pkt</span><span class="bb-total">+${arrowBonus}</span></div>`;
+      }
+      if(lives > 0){
+        rows += `<div class="bb-row"><span class="bb-icon">❤</span><span class="bb-label">Bonus za życia: ${lives}</span><span class="bb-math">× ${HEART_BONUS_PTS} pkt</span><span class="bb-total">+${heartBonus}</span></div>`;
+      }
+      rows += `<div class="bb-row bb-row-total"><span class="bb-icon">🏆</span><span class="bb-label">Razem</span><span class="bb-math"></span><span class="bb-total">${score}</span></div>`;
+      bonusBox.innerHTML = `<p class="bb-title">Podsumowanie punktacji</p>${rows}`;
+      bonusBox.classList.remove('hidden');
+    } else {
+      bonusBox.innerHTML = '';
+      bonusBox.classList.add('hidden');
+    }
+
     document.getElementById('leaderboard').innerHTML = '<tr><td style="color:#7a5a3a; font-style:italic;">Zapisywanie wyniku…</td></tr>';
     saveScore();
     overScreen.classList.remove('hidden');
