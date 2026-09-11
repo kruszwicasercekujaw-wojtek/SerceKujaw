@@ -10,6 +10,13 @@
 const VIDEOS = [
   {
     title: "Polowanie Na Myszy” Pierwsza zapowiedź",
+    url: "https://youtube.com/shorts/HzgW8nk-ojQ?feature=share",
+    description: "PożegnajMY Lato Razem",
+    date: "Wrzesień 2026",
+    orientation: "portrait"
+  },
+   {
+    title: "Polowanie Na Myszy” Pierwsza zapowiedź",
     url: "https://www.youtube.com/shorts/0NnfOtL_KdA",
     description: "🔥 POLOWANIE NA MYSZY NADCHODZI! 🐭",
     date: "sierpień 2026",
