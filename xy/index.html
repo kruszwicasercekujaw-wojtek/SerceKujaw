@@ -841,6 +841,9 @@
   // Pierwszy drewniany mostek nad przepaścią - gotowa grafika (belki, słupki
   // wiązane sznurem i pokład z bali). FOOTBRIDGE_DECK mówi, w którym miejscu
   // sprite'a - licząc od jego góry - wypada powierzchnia, po której chodzi król.
+  // Złote berło królewskie wypadające ze skrzyni-niespodzianki (gotowa grafika).
+  const SCEPTER_IMG = new Image();
+  SCEPTER_IMG.src = 'data:image/png;base64,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';
   const FOOTBRIDGE_IMG = new Image();
   const FOOTBRIDGE_DECK = 0.6298;
   const FOOTBRIDGE_OVERHANG = 4;      // jak bardzo skrajne słupki wchodzą na brzegi
@@ -1017,6 +1020,13 @@
     const addMysteryCrate = (dx, y) => {
       blocks.push({ x:cx+dx, y:(y!==undefined?y:ROW()), size:BLOCK, type:'mystery', alive:true, used:false, bump:0 });
     };
+    // Czerwona skrzynia - dużo wytrzymalsza niż zwykła: trzeba ją uderzyć
+    // głową od spodu 5 razy, zanim się rozpadnie. Każde trafienie daje
+    // 20 punktów (czyli 100 punktów za całą skrzynię), a pozostała liczba
+    // uderzeń widoczna jest na skrzyni jako licznik i narastające pęknięcia.
+    const addToughCrate = (dx, y) => {
+      blocks.push({ x:cx+dx, y:(y!==undefined?y:ROW()), size:BLOCK, type:'redcrate', alive:true, used:false, bump:0, arrowHits:0, hits:0, hitsNeeded:5 });
+    };
 
     // --- Start: safe run-up ---
     addGround(480);
@@ -1027,6 +1037,11 @@
     addBlock(-360,'bonus'); addBlock(-310,'brick'); addBlock(-260,'bonus');
     addAmmoCrate(-150);
     addMouse(-120, 55);
+
+    // --- Czerwona skrzynia: pierwsza, wytrzymała skrzynia w grze - trzeba
+    //     uderzyć ją głową 5 razy (po 20 pkt za trafienie), zanim się rozpadnie. ---
+    addGround(150);
+    addToughCrate(-75);
 
     // --- Kolce: pierwsza próba refleksu - wąski skok nad kolcami ---
     addGround(220);
@@ -1054,6 +1069,10 @@
     addGround(400);
     addBlock(-320,'bonus'); addBlock(-270,'brick'); addBlock(-220,'bonus');
     addMouse(-100,50);
+
+    // --- Czerwona skrzynia numer dwa ---
+    addGround(150);
+    addToughCrate(-75);
 
     // --- Kruki nad drogą: lecą nisko, trzeba przed nimi skoczyć albo zestrzelić je strzałą ---
     addGround(260);
@@ -1088,6 +1107,10 @@
     addRaven(-110, 70, {height:38});
     addCoin(-60,-20);
     addMysteryCrate(-20);
+
+    // --- Czerwona skrzynia numer trzy ---
+    addGround(150);
+    addToughCrate(-75);
 
     // --- Rząd skrzyń: 8 skrzyń na jednym, równym poziomie, podniesione na tyle
     //     wysoko, żeby król zmieścił się pod spodem i mógł je rozbijać głową.
@@ -1133,6 +1156,10 @@
     addMouse(-100,40, {golden:true});
     addRaven(-300,90,{height:40});
     addAmmoCrate(-40);
+
+    // --- Czerwona skrzynia numer cztery: ostatnia próba przed bramą wieży ---
+    addGround(150);
+    addToughCrate(-75);
 
     // --- Stary budynek z wejściem do piwnic: bonusowa runda tuż przed
     //     pierwszym strażnikiem-łucznikiem. Dotknięcie drzwi przenosi do
@@ -1505,7 +1532,7 @@
     }
   }
 
-  function blockSolid(b){ return (b.type==='brick' || b.type==='ammo' || b.type==='mystery') ? b.alive : true; } // bonus blocks stay solid even when used
+  function blockSolid(b){ return (b.type==='brick' || b.type==='ammo' || b.type==='mystery' || b.type==='redcrate') ? b.alive : true; } // bonus blocks stay solid even when used
   function rectsOverlap(x1,y1,w1,h1,x2,y2,w2,h2){ return x1<x2+w2 && x1+w1>x2 && y1<y2+h2 && y1+h1>y2; }
 
   function onBlockHit(b){
@@ -1538,6 +1565,19 @@
         spawnBurst(b.x+b.size/2, b.y+b.size/2, '#8a2e2e', null);
         particles.push({x:b.x+b.size/2, y:b.y-10, vx:0, vy:-44, life:1.3, color:'#ff9a8c', text: count>0 ? `Pech! ${count}× mysz!` : 'Pech!', isText:true});
         spawnMysteryMice(b.x+b.size/2, count);
+      }
+    } else if(b.type==='redcrate' && b.alive){
+      // Czerwona skrzynia: każde uderzenie głową daje 20 punktów; dopiero
+      // piąte trafienie ją rozbija.
+      b.hits = (b.hits||0) + 1;
+      score += 20; scoreVal.textContent = score;
+      sfx.brick();
+      spawnBurst(b.x+b.size/2, b.y+b.size/2, '#c0392b', null);
+      particles.push({x:b.x+b.size/2, y:b.y-6, vx:0, vy:-40, life:1.1, color:'#ffd8d0', text:'+20', isText:true});
+      if(b.hits >= (b.hitsNeeded||5)){
+        b.alive = false;
+        spawnBurst(b.x+b.size/2, b.y+b.size/2, '#8a2e2e', null);
+        particles.push({x:b.x+b.size/2, y:b.y-22, vx:0, vy:-46, life:1.3, color:'#ffb0a0', text:'Rozwalona!', isText:true});
       }
     } else if(b.type==='brick' && b.alive){
       b.alive = false;
@@ -2791,6 +2831,7 @@
     if(b.type==='brick' && !b.alive) return;
     if(b.type==='ammo' && !b.alive) return;
     if(b.type==='mystery' && !b.alive) return;
+    if(b.type==='redcrate' && !b.alive) return;
     const s = b.size;
     ctx.save();
     if(b.type==='wall'){
@@ -2870,6 +2911,45 @@
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('?', x+s/2, y+s/2+1);
       ctx.strokeText('?', x+s/2, y+s/2+1);
+    } else if(b.type==='redcrate'){
+      // czerwona, wytrzymała skrzynia - wymaga 5 uderzeń głową (po 20 pkt za każde)
+      ctx.fillStyle = '#8a2620';
+      ctx.fillRect(x,y,s,s);
+      ctx.strokeStyle = '#4a1310'; ctx.lineWidth=2;
+      ctx.strokeRect(x+1,y+1,s-2,s-2);
+      // plank seams
+      ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.moveTo(x+4,y+s*0.34); ctx.lineTo(x+s-4,y+s*0.34); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+4,y+s*0.67); ctx.lineTo(x+s-4,y+s*0.67); ctx.stroke();
+      // iron corner brackets
+      ctx.fillStyle = '#e8d0a0';
+      [[x+2,y+2],[x+s-8,y+2],[x+2,y+s-8],[x+s-8,y+s-8]].forEach(([cx2,cy2])=> ctx.fillRect(cx2,cy2,6,6));
+      // pęknięcia narastające wraz z liczbą otrzymanych uderzeń
+      const hits = b.hits||0;
+      if(hits>0){
+        ctx.strokeStyle = 'rgba(20,5,5,0.85)'; ctx.lineWidth=1.6;
+        const cracks = [
+          [[x+s*0.5,y+2],[x+s*0.42,y+s*0.4],[x+s*0.56,y+s*0.62]],
+          [[x+2,y+s*0.5],[x+s*0.34,y+s*0.46],[x+s*0.3,y+s*0.7]],
+          [[x+s-2,y+s*0.42],[x+s*0.66,y+s*0.5],[x+s*0.7,y+s*0.78]],
+          [[x+s*0.2,y+s-2],[x+s*0.36,y+s*0.72]],
+          [[x+s*0.78,y+s-2],[x+s*0.62,y+s*0.7]]
+        ];
+        for(let i=0;i<Math.min(hits,cracks.length);i++){
+          const seg = cracks[i];
+          ctx.beginPath(); ctx.moveTo(seg[0][0],seg[0][1]);
+          for(let k=1;k<seg.length;k++) ctx.lineTo(seg[k][0],seg[k][1]);
+          ctx.stroke();
+        }
+      }
+      // licznik pozostałych uderzeń, żeby gracz widział ile jeszcze zostało
+      const left = Math.max(0,(b.hitsNeeded||5) - hits);
+      ctx.fillStyle = '#ffe3d8';
+      ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 1;
+      ctx.font = "700 " + Math.round(s*0.42) + "px 'Cinzel', serif";
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(left), x+s/2, y+s*0.62);
+      ctx.strokeText(String(left), x+s/2, y+s*0.62);
     } else {
       // golden treasure crate
       ctx.fillStyle = b.used ? '#7a6a4a' : '#caa24e';
@@ -3285,21 +3365,26 @@
       return;
     }
     if(p.type==='scepter'){
-      // Złote berło królewskie - pulsuje, z klejnotem na szczycie.
+      // Złote berło królewskie (gotowa grafika) - pulsuje i błyszczy.
       const pulse = 1 + Math.sin(idleT*6)*0.08;
       ctx.save(); ctx.translate(10,0); ctx.scale(pulse,pulse);
       ctx.shadowColor = 'rgba(255,215,110,0.85)'; ctx.shadowBlur = 14;
-      ctx.rotate(-0.5);
-      // trzon berła
-      const shaftGrad = ctx.createLinearGradient(-2,-18,2,18);
-      shaftGrad.addColorStop(0,'#ffe9a8'); shaftGrad.addColorStop(0.5,'#e8c876'); shaftGrad.addColorStop(1,'#8a6a1f');
-      ctx.fillStyle = shaftGrad; ctx.strokeStyle = '#5a4213'; ctx.lineWidth=1.2;
-      roundRectPath(ctx,-3,-18,6,34,3); ctx.fill(); ctx.stroke();
-      // klejnot na szczycie
-      ctx.fillStyle = '#c24a3e'; ctx.strokeStyle = '#5a1710'; ctx.lineWidth=1.4;
-      ctx.beginPath(); ctx.arc(0,-22,7,0,7); ctx.fill(); ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth=1.2;
-      ctx.beginPath(); ctx.arc(-2,-24,2.4,0,7); ctx.stroke();
+      if(SCEPTER_IMG.complete && SCEPTER_IMG.naturalWidth>0){
+        const ih = 46; // wysokość sprite'a berła w grze
+        const iw = ih * (SCEPTER_IMG.naturalWidth / SCEPTER_IMG.naturalHeight);
+        ctx.drawImage(SCEPTER_IMG, -iw/2, -ih*0.72, iw, ih);
+      } else {
+        // fallback zanim obrazek się załaduje
+        ctx.rotate(-0.5);
+        const shaftGrad = ctx.createLinearGradient(-2,-18,2,18);
+        shaftGrad.addColorStop(0,'#ffe9a8'); shaftGrad.addColorStop(0.5,'#e8c876'); shaftGrad.addColorStop(1,'#8a6a1f');
+        ctx.fillStyle = shaftGrad; ctx.strokeStyle = '#5a4213'; ctx.lineWidth=1.2;
+        roundRectPath(ctx,-3,-18,6,34,3); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#c24a3e'; ctx.strokeStyle = '#5a1710'; ctx.lineWidth=1.4;
+        ctx.beginPath(); ctx.arc(0,-22,7,0,7); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth=1.2;
+        ctx.beginPath(); ctx.arc(-2,-24,2.4,0,7); ctx.stroke();
+      }
       ctx.restore();
       ctx.restore();
       return;
