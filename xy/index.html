@@ -412,6 +412,7 @@
   .place-banner.show{ opacity:1; transform:translateX(-50%) translateY(0); }
   #zoneBanner{ top:38%; }
   #roundBanner{ top:38%; font-size:clamp(9px,2.6vw,13px); padding:5px 14px; }
+  #topPlayerBanner{ top:46%; font-size:clamp(8px,2.3vw,11px); padding:4px 12px; color:var(--parchment); border-color:var(--gold-bright); }
 
   /* Ostrzeżenie o amunicji - sam biały napis wyśrodkowany, bez tła i ramki */
   #ammoWarning{
@@ -494,10 +495,13 @@
       <div id="comboBadge"><span id="comboText"></span></div>
 
       <!-- Baner z nazwą aktualnej krainy - statyczny, tuż pod trawą -->
-      <div id="roundBanner" class="place-banner">Stara Ziemia Gopłan</div>
+      <div id="roundBanner" class="place-banner">Stara Ziemia Goplan</div>
 
       <!-- Baner strefy (np. "Wzgórze Zamkowe", "Mysia Wieża wita Króla") -->
       <div id="zoneBanner" class="place-banner"></div>
+
+      <!-- Info o aktualnym liderze rankingu (Top Królowie), pokazywane na starcie wyprawy -->
+      <div id="topPlayerBanner" class="place-banner"></div>
 
       <!-- Ostrzeżenie o kończącej się amunicji - sam biały napis, bez tła -->
       <div id="ammoWarning"></div>
@@ -597,9 +601,12 @@
   const ammoBox = document.getElementById('ammoBox');
   const zoneBanner = document.getElementById('zoneBanner');
   const roundBanner = document.getElementById('roundBanner');
+  const topPlayerBanner = document.getElementById('topPlayerBanner');
   const ammoWarning = document.getElementById('ammoWarning');
   let zoneBannerTimer = null;
   let roundBannerTimer = null;
+  let topPlayerBannerTimer = null;
+  let topScoresCache = null;
   let ammoWarningTimer = null;
   // Pokazuje na środku ekranu biały napis bez tła (np. "Oszczędzaj Strzały")
   // na 3 sekundy, po czym sam znika.
@@ -4273,6 +4280,17 @@
       roundBanner.classList.remove('show');
       roundBannerTimer = null;
     }, 4000);
+    if(topPlayerBannerTimer){ clearTimeout(topPlayerBannerTimer); topPlayerBannerTimer=null; }
+    topPlayerBanner.classList.remove('show');
+    if(topScoresCache && topScoresCache.length > 0){
+      const leader = topScoresCache[0];
+      topPlayerBanner.textContent = `TOP GRACZ - ${leader.name}`;
+      topPlayerBanner.classList.add('show');
+      topPlayerBannerTimer = setTimeout(()=>{
+        topPlayerBanner.classList.remove('show');
+        topPlayerBannerTimer = null;
+      }, 4000);
+    }
     if(ammoWarningTimer){ clearTimeout(ammoWarningTimer); ammoWarningTimer=null; }
     ammoWarning.classList.remove('show');
     comboCount = 0; comboTimer = 0; updateComboBadge();
@@ -4293,6 +4311,8 @@
     state = STATE.OVER;
     if(roundBannerTimer){ clearTimeout(roundBannerTimer); roundBannerTimer=null; }
     roundBanner.classList.remove('show');
+    if(topPlayerBannerTimer){ clearTimeout(topPlayerBannerTimer); topPlayerBannerTimer=null; }
+    topPlayerBanner.classList.remove('show');
     if(ammoWarningTimer){ clearTimeout(ammoWarningTimer); ammoWarningTimer=null; }
     ammoWarning.classList.remove('show');
     hud.classList.add('hidden');
@@ -4348,6 +4368,7 @@
       const data = await res.json();
       if(data && data.ok) top = data.top;
     }catch(e){ console.warn('Nie udało się pobrać wyników z serwera:', e); }
+    topScoresCache = top;
     renderCloudBoard(top);
     renderLeaderboard(top);
   }
