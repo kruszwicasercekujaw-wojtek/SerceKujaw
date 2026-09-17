@@ -153,6 +153,10 @@
   }
   @keyframes onlinePulse{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
   .online-counter .online-val{ font-variant-numeric: tabular-nums; }
+  .online-counter .online-label{
+    font-family:'Cinzel', serif; font-size:clamp(7px,1.8vw,9px); letter-spacing:.14em;
+    text-transform:uppercase; opacity:.75; white-space:nowrap;
+  }
 
   /* ---------- Ekran (bezel) ---------- */
   #screenBezel{
@@ -459,7 +463,7 @@
   <div class="console-brand">
     <span class="brand-name">Kruszwica</span>
     <span class="online-counter" id="onlineCounter" title="Gracze online">
-      <span class="online-dot"></span><span class="online-val" id="onlineCount">–</span>
+      <span class="online-dot"></span><span class="online-val" id="onlineCount">–</span><span class="online-label">Graczy online</span>
     </span>
   </div>
 
