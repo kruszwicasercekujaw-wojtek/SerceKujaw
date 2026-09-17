@@ -140,6 +140,19 @@
     background:radial-gradient(circle at 35% 30%, #ff8a7a, var(--danger-bright) 60%, var(--danger) 100%);
     box-shadow:0 0 5px rgba(194,74,62,0.9);
   }
+  .online-counter{
+    display:flex; align-items:center; gap:6px;
+    font-family:'EB Garamond', serif; font-size:clamp(10px,2.6vw,12px);
+    color:var(--parchment); opacity:.9;
+  }
+  .online-counter .online-dot{
+    width:7px; height:7px; border-radius:50%; flex:none;
+    background:radial-gradient(circle at 35% 30%, #b6ffb0, #4fce55 60%, #2e8a33 100%);
+    box-shadow:0 0 5px rgba(79,206,85,0.9);
+    animation: onlinePulse 1.8s ease-in-out infinite;
+  }
+  @keyframes onlinePulse{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
+  .online-counter .online-val{ font-variant-numeric: tabular-nums; }
 
   /* ---------- Ekran (bezel) ---------- */
   #screenBezel{
@@ -445,7 +458,9 @@
 <div id="console">
   <div class="console-brand">
     <span class="brand-name">Kruszwica</span>
-    <span class="brand-dot"></span>
+    <span class="online-counter" id="onlineCounter" title="Gracze online">
+      <span class="online-dot"></span><span class="online-val" id="onlineCount">–</span>
+    </span>
   </div>
 
   <div id="screenBezel">
@@ -4332,6 +4347,39 @@
     renderCloudBoard(top);
     renderLeaderboard(top);
   }
+
+  /* ============ Licznik graczy online ============ */
+  const onlineCountEl = document.getElementById('onlineCount');
+  const ONLINE_HEARTBEAT_MS = 12000; // co ile wysyłamy sygnał "jestem tu"
+  function getSessionId(){
+    let id = null;
+    try{ id = sessionStorage.getItem('krSessionId'); }catch(e){}
+    if(!id){
+      id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('s'+Date.now()+Math.random().toString(16).slice(2));
+      try{ sessionStorage.setItem('krSessionId', id); }catch(e){}
+    }
+    return id;
+  }
+  const onlineSessionId = getSessionId();
+  async function sendOnlineHeartbeat(){
+    try{
+      const res = await fetch('/api/online', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ sessionId: onlineSessionId })
+      });
+      const data = await res.json();
+      if(data && data.ok && onlineCountEl) onlineCountEl.textContent = data.count;
+    }catch(e){ console.warn('Nie udało się pobrać liczby graczy online:', e); }
+  }
+  function startOnlineCounter(){
+    sendOnlineHeartbeat();
+    setInterval(sendOnlineHeartbeat, ONLINE_HEARTBEAT_MS);
+    // Wysyłamy dodatkowy sygnał, gdy karta znów staje się aktywna (np. po powrocie z tła).
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState === 'visible') sendOnlineHeartbeat();
+    });
+  }
+
   function renderCloudBoard(top){
     cloudBoard.innerHTML = '';
     if(top === null){
@@ -4501,6 +4549,7 @@
   lastLevelH = H;
   renderHearts();
   loadTopScores();
+  startOnlineCounter();
   requestAnimationFrame(frame);
 
 })();
