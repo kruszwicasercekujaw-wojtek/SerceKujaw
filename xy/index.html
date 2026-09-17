@@ -779,7 +779,7 @@
 
   let player, arrows, particles, mice, blocks, coins, pickups, groundSegments, finishX, LEVEL_LENGTH;
   let zoneHillX = 0, zoneHillShown = false, towerBannerShown = false;
-  let spikes, ravens, pendulums, guards, enemyArrows, bonfires;
+  let spikes, ravens, pendulums, guards, enemyArrows, bonfires, fish;
   // Pochodnie w piwnicach - czysto dekoracyjne oświetlenie zamontowane na
   // murach lochów. W przeciwieństwie do ognisk (bonfires) NIE zadają
   // obrażeń królowi - służą tylko do rozjaśnienia mrocznej kondygnacji.
@@ -952,7 +952,7 @@
 
   function buildLevel(){
     groundSegments = []; blocks = []; coins = []; mice = []; pickups = [];
-    spikes = []; ravens = []; pendulums = []; guards = []; bonfires = []; torches = []; pits = [];
+    spikes = []; ravens = []; pendulums = []; guards = []; bonfires = []; torches = []; pits = []; fish = [];
     bridgeGuard = null; bridgeAngle = 1; bridgeRevealT = 0; guardSilentT = 0;
     footbridgeX = 0; footbridgeW = 0; footbridgeShown = false;
     footbridgeCollapsed = false; footbridgeAngle = 1; footbridgeCoinSpawned = false;
@@ -1274,6 +1274,47 @@
     [0.14, 0.36, 0.58, 0.8].forEach(f=>{
       coins.push({ x: shipMoatX + shipMoatW*f, y: GROUND_Y() - SHIP_ABOVE_H - 36, taken:false, t:Math.random()*10 });
     });
+    // Dodatkowo: złote monety z logotypami (Kruszwica - Serce Kujaw oraz
+    // Gopłanie), rozrzucone losowo na całej trasie płynącego statku -
+    // zawieszone nisko (na wysokości zwykłych monet lub niżej), tak by król
+    // mógł je złapać skacząc wprost z pokładu. Inna liczba (min. 6), inne
+    // pozycje i inne logotypy przy każdym uruchomieniu poziomu.
+    const LOGO_COIN_COUNT = 6 + randInt(0, 2); // 6-8 monet na całej trasie
+    for(let i=0; i<LOGO_COIN_COUNT; i++){
+      const f = (i + 0.5) / LOGO_COIN_COUNT + (Math.random()*0.5 - 0.25) / LOGO_COIN_COUNT; // rozłożone równomiernie na całej fosie, z lekkim losowym przesunięciem
+      const logo = LOGO_COINS[randInt(0, LOGO_COINS.length - 1)];
+      pickups.push({
+        x: shipMoatX + shipMoatW * clamp(f, 0.04, 0.96),
+        y: GROUND_Y() - SHIP_ABOVE_H - 36,
+        vx:0, vy:0, ttl:Infinity, type:'logocoin', logo, static:true
+      });
+    }
+    // --- Ryby w fosie: pływają pod wodą wzdłuż całej trasy statku (czysto
+    //     dekoracyjnie, nie da się ich zestrzelić pod powierzchnią). Spośród
+    //     nich dokładnie 5 to "skoczki" - co jakiś czas wyskakują pionowo
+    //     nad lustro wody i po chwili opadają z powrotem. Tylko zestrzelenie
+    //     skoczka strzałą W POWIETRZU (nad wodą) daje królowi 50 punktów. ---
+    const FISH_SWIM_COUNT = 11; // ryby pływające wyłącznie pod wodą
+    const FISH_JUMP_COUNT = 5;  // ryby-skoczki, które można zestrzelić
+    const FISH_TOTAL = FISH_SWIM_COUNT + FISH_JUMP_COUNT;
+    const fishSlots = Array.from({length:FISH_TOTAL}, (_,i)=>i);
+    // Losujemy, które z równomiernie rozłożonych "slotów" na trasie fosy
+    // dostaną rolę skoczka, żeby skoczki też były rozrzucone po całej trasie.
+    for(let i=fishSlots.length-1;i>0;i--){ const j=randInt(0,i); const t=fishSlots[i]; fishSlots[i]=fishSlots[j]; fishSlots[j]=t; }
+    const jumperSlots = new Set(fishSlots.slice(0, FISH_JUMP_COUNT));
+    for(let i=0; i<FISH_TOTAL; i++){
+      const isJumper = jumperSlots.has(i);
+      const fx = shipMoatX + shipMoatW * ((i+0.5)/FISH_TOTAL) + rand(-25,25);
+      const range = rand(30,60);
+      fish.push({
+        x: fx, minX: shipMoatX + 10, maxX: shipMoatX + shipMoatW - 10,
+        swimMinX: fx - range, swimMaxX: fx + range,
+        dir: Math.random()<0.5 ? -1 : 1, speed: rand(18,34),
+        depth: rand(16,50), y: waterTopY(),
+        vy: 0, state:'swim', jumpIn: rand(1.5, 5), bobT: Math.random()*10,
+        r: rand(12,16), jumper: isJumper, alive:true, flashT:0
+      });
+    }
 
     // --- Stary budynek z wejściem do piwnic: bonusowa runda tuż przed
     //     pierwszym strażnikiem-łucznikiem. Dotknięcie drzwi przenosi do
@@ -1357,7 +1398,7 @@
      powrotem na główną planszę. */
   function buildDungeonLevel(){
     groundSegments = []; blocks = []; coins = []; mice = []; pickups = [];
-    spikes = []; ravens = []; pendulums = []; guards = []; bonfires = []; torches = []; pits = [];
+    spikes = []; ravens = []; pendulums = []; guards = []; bonfires = []; torches = []; pits = []; fish = [];
     arrows = []; enemyArrows = [];
     dungeonExitTriggered = false;
     const floorY = GROUND_Y() - BLOCK; // szczyt skrzyń tworzących podłogę
@@ -1419,7 +1460,7 @@
 
   function enterDungeon(){
     savedMain = {
-      groundSegments, blocks, coins, mice, pickups, spikes, ravens, pendulums, guards, bonfires, torches, pits,
+      groundSegments, blocks, coins, mice, pickups, spikes, ravens, pendulums, guards, bonfires, torches, pits, fish,
       arrows, enemyArrows, LEVEL_LENGTH, cameraX, checkpointX
     };
     inDungeon = true;
@@ -1436,7 +1477,7 @@
     groundSegments = savedMain.groundSegments; blocks = savedMain.blocks; coins = savedMain.coins;
     mice = savedMain.mice; pickups = savedMain.pickups; spikes = savedMain.spikes;
     ravens = savedMain.ravens; pendulums = savedMain.pendulums; guards = savedMain.guards;
-    bonfires = savedMain.bonfires; torches = savedMain.torches; pits = savedMain.pits; arrows = savedMain.arrows; enemyArrows = savedMain.enemyArrows;
+    bonfires = savedMain.bonfires; torches = savedMain.torches; pits = savedMain.pits; fish = savedMain.fish; arrows = savedMain.arrows; enemyArrows = savedMain.enemyArrows;
     LEVEL_LENGTH = savedMain.LEVEL_LENGTH; cameraX = savedMain.cameraX; checkpointX = savedMain.checkpointX;
     inDungeon = false;
     savedMain = null;
@@ -2060,6 +2101,57 @@
     }
   }
 
+  /* ============ Ryby w fosie (fish) ============
+     Większość pływa wyłącznie pod wodą, przemieszczając się w tę i z powrotem
+     wzdłuż krótkiego odcinka trasy. Tylko ryby oznaczone jako "jumper" co
+     jakiś czas wyskakują w pionie nad lustro wody i po chwili opadają z
+     powrotem - nie robią królowi krzywdy, ale zestrzelenie jednej z nich w
+     locie strzałą (nad wodą) daje 50 punktów (patrz updateArrows i hitFish). */
+  const FISH_GRAVITY = 1500;
+  function updateFish(dt){
+    const top = waterTopY();
+    for(const f of fish){
+      if(!f.alive) continue;
+      if(f.flashT>0) f.flashT = Math.max(0, f.flashT - dt*1000);
+      f.bobT += dt;
+      if(f.state==='swim'){
+        // Powolne pływanie w tę i z powrotem, cały czas pod powierzchnią wody.
+        f.x += f.dir*f.speed*dt;
+        if(f.x < f.swimMinX || f.x < f.minX){ f.dir = 1; }
+        if(f.x > f.swimMaxX || f.x > f.maxX){ f.dir = -1; }
+        f.y = top + f.depth + Math.sin(f.bobT*1.4)*4;
+        if(f.jumper){
+          f.jumpIn -= dt;
+          if(f.jumpIn <= 0){
+            f.state = 'jump';
+            // Wyskok ma sięgać dokładnie do wysokości zwykłych monet zawieszonych
+            // nad trasą statku (patrz addCoin przy budowie fosy), żeby król
+            // realnie mógł zestrzelić rybę strzałą w najwyższym punkcie skoku.
+            const coinHeight = GROUND_Y() - SHIP_ABOVE_H - 36;
+            const rise = Math.max(30, top - coinHeight) * rand(0.95, 1.2);
+            f.vy = -Math.sqrt(2 * FISH_GRAVITY * rise);
+          }
+        }
+      } else if(f.state==='jump'){
+        f.vy += FISH_GRAVITY*dt;
+        f.y += f.vy*dt;
+        if(f.y >= top + f.depth){
+          f.state = 'swim';
+          f.bobT = 0;
+          f.jumpIn = rand(2.5, 6);
+        }
+      }
+    }
+  }
+  function hitFish(f){
+    f.alive = false;
+    sfx.hit();
+    spawnBurst(f.x, f.y, '#bfe3f2', null);
+    score += 50; scoreVal.textContent = score;
+    sfx.bonus();
+    particles.push({x:f.x, y:f.y-16, vx:0, vy:-46, life:1.4, color:'#bfe3f2', text:'+50', isText:true});
+  }
+
   /* ============ Strażnik Mysiej Wieży (guard) ============ */
   function updateGuards(dt){
     for(const g of guards){
@@ -2130,6 +2222,16 @@
           a.alive = false;
           hitMouse(m, mouseY, 'arrow');
           break;
+        }
+      }
+      if(a.alive){
+        for(const f of fish){
+          if(!f.alive || f.state!=='jump' || f.y >= waterTopY()) continue;
+          if(Math.abs(a.x-f.x) < f.r+10 && Math.abs(a.y-f.y) < f.r+12){
+            a.alive = false;
+            hitFish(f);
+            break;
+          }
         }
       }
       if(a.alive){
@@ -3597,6 +3699,38 @@
     ctx.restore();
   }
 
+  function drawFish(f){
+    if(!f.alive) return;
+    const x = f.x-cameraX, y = f.y;
+    if(x<-30||x>W+30) return;
+    const underwater = f.state==='swim';
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(f.dir,1);
+    if(underwater){
+      // Pod wodą ryba jest tylko przyciemnionym, półprzezroczystym cieniem
+      // widocznym przez taflę wody - podkreśla to, że nie da się jej stąd zestrzelić.
+      ctx.globalAlpha = 0.5;
+    }
+    const wag = Math.sin(underwater ? f.bobT*7 : idleT*18)*0.5;
+    ctx.rotate(!underwater ? clamp(-f.vy/700, -0.6, 0.6) : 0);
+    const flash = f.flashT>0;
+    ctx.fillStyle = flash ? '#ffffff' : (underwater ? '#3f7a8c' : '#e0975a');
+    ctx.beginPath(); ctx.ellipse(0,0,f.r*1.15,f.r*0.62,0,0,7); ctx.fill();
+    ctx.fillStyle = flash ? '#ffffff' : (underwater ? '#2f5f6e' : '#c9723c');
+    ctx.beginPath();
+    ctx.moveTo(-f.r*1.0,0);
+    ctx.lineTo(-f.r*1.7,-f.r*0.55+wag*6);
+    ctx.lineTo(-f.r*1.7,f.r*0.55+wag*6);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0,-f.r*0.5,f.r*0.5,f.r*0.22,0,0,7); ctx.fill();
+    if(!underwater){
+      ctx.fillStyle = '#fff3c9';
+      ctx.beginPath(); ctx.arc(f.r*0.7,-2,1.6,0,7); ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function drawPendulum(p){
     const ax = p.ax-cameraX, ay = p.ay, x = p.x-cameraX, y = p.y;
     if(x<-40||x>W+40) return;
@@ -4001,6 +4135,7 @@
       updatePlayer(dt);
       updateShip(dt);
       updateMice(dt);
+      updateFish(dt);
       updateRavens(dt);
       updateSpikes(dt);
       updateBonfires(dt);
@@ -4091,6 +4226,7 @@
     for(const p of pickups) drawPickup(p);
     for(const m of mice) drawMouse(m);
     for(const p of pendulums) drawPendulum(p);
+    for(const fi of fish) drawFish(fi);
     for(const r of ravens) drawRaven(r);
     for(const g of guards) drawGuard(g);
     if(inDungeon){ drawDungeonExit(); } else { drawFinish(); }
