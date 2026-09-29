@@ -1,42 +1,51 @@
-// Vercel Serverless Function: /api/light
-// GET  -> zwraca "1" lub "0" (tekst) - to będzie czytać ESP32
-// POST -> ustawia stan (bez hasła), body: {"state":1}
+// /api/light.js
+// Funkcja serwerowa Vercel — przechowuje stan światła (0/1) w pliku light.txt
+// w prywatnym Vercel Blob Storage (tak samo jak wynik.txt w grze).
 //
-// Wymagane zmienne środowiskowe (Vercel -> Settings -> Environment Variables):
-//   KV_REST_API_URL, KV_REST_API_TOKEN  (dodaje je integracja Upstash Redis)
+// GET  -> zwraca "1" lub "0" (zwykły tekst) — to będzie czytać ESP32
+// POST -> ustawia stan, body: {"state":1}
 
-const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-const KEY = "merrychristmas_light";
+import { put, get } from '@vercel/blob';
 
-async function redis(path) {
-  const r = await fetch(`${URL_}/${path}`, {
-    headers: { Authorization: `Bearer ${TOKEN}` },
-  });
-  return r.json();
-}
-
-module.exports = async (req, res) => {
-  res.setHeader("Cache-Control", "no-store");
+export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
 
   try {
-    if (req.method === "GET") {
-      const data = await redis(`get/${KEY}`);
-      const state = data.result === "1" ? "1" : "0";
-      res.setHeader("Content-Type", "text/plain; charset=utf-8");
-      return res.status(200).send(state);
+    if (req.method === 'GET') {
+      let state = '0';
+      try {
+        const result = await get('light.txt', { access: 'private', useCache: false });
+        if (result && result.stream) {
+          const text = (await new Response(result.stream).text()).trim();
+          state = text === '1' ? '1' : '0';
+        }
+      } catch (e) {
+        // Plik jeszcze nie istnieje — domyślnie światło wyłączone.
+      }
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.status(200).send(state);
+      return;
     }
 
-    if (req.method === "POST") {
-      const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body || {};
+    if (req.method === 'POST') {
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
       const state = Number(body.state) === 1 ? 1 : 0;
-      await redis(`set/${KEY}/${state}`);
-      return res.status(200).json({ state });
+
+      await put('light.txt', String(state), {
+        access: 'private',
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: 'text/plain; charset=utf-8',
+      });
+
+      res.status(200).json({ ok: true, state });
+      return;
     }
 
-    res.setHeader("Allow", "GET, POST");
-    return res.status(405).json({ error: "Method not allowed" });
-  } catch (e) {
-    return res.status(500).json({ error: "Błąd serwera" });
+    res.setHeader('Allow', 'GET, POST');
+    res.status(405).json({ ok: false, error: 'Method not allowed' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Błąd serwera.' });
   }
-};
+}
