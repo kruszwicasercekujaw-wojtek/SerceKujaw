@@ -1,10 +1,9 @@
 // Vercel Serverless Function: /api/light
 // GET  -> zwraca "1" lub "0" (tekst) - to będzie czytać ESP32
-// POST -> ustawia stan (wymaga hasła), body: {"state":1,"password":"..."}
+// POST -> ustawia stan (bez hasła), body: {"state":1}
 //
 // Wymagane zmienne środowiskowe (Vercel -> Settings -> Environment Variables):
 //   KV_REST_API_URL, KV_REST_API_TOKEN  (dodaje je integracja Upstash Redis)
-//   LIGHT_PASSWORD                       (Twoje hasło do włączania światła)
 
 const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -30,9 +29,6 @@ module.exports = async (req, res) => {
 
     if (req.method === "POST") {
       const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body || {};
-      if (!process.env.LIGHT_PASSWORD || body.password !== process.env.LIGHT_PASSWORD) {
-        return res.status(401).json({ error: "Nieprawidłowe hasło" });
-      }
       const state = Number(body.state) === 1 ? 1 : 0;
       await redis(`set/${KEY}/${state}`);
       return res.status(200).json({ state });
