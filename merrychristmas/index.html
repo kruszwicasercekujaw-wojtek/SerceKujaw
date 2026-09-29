@@ -40,12 +40,6 @@
   #btn:disabled { opacity: .6; cursor: wait; }
   #status { margin-top: 28px; min-height: 1.4em; color: var(--muted); }
   #status.err { color: #ff8a90; }
-  #pwWrap { margin-top: 24px; }
-  #pw {
-    width: 100%; padding: 10px 12px; border-radius: 8px;
-    border: 1px solid var(--muted); background: var(--panel);
-    color: var(--text); font: inherit; text-align: center;
-  }
   @media (prefers-reduced-motion: reduce) { #btn { transition: none; } }
 </style>
 </head>
@@ -56,10 +50,6 @@
 
   <button id="btn" type="button" aria-pressed="false">Wyłączone</button>
   <div id="status" role="status" aria-live="polite"></div>
-
-  <div id="pwWrap">
-    <input id="pw" type="password" placeholder="Hasło" autocomplete="current-password" aria-label="Hasło">
-  </div>
 </main>
 
 <script>
@@ -67,10 +57,7 @@
   const API = "/api/light";
   const btn = document.getElementById("btn");
   const statusEl = document.getElementById("status");
-  const pw = document.getElementById("pw");
   let state = 0;
-
-  try { pw.value = localStorage.getItem("mc_pw") || ""; } catch (e) {}
 
   function render() {
     btn.classList.toggle("on", state === 1);
@@ -99,15 +86,13 @@
       const r = await fetch(API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state: next, password: pw.value }),
+        body: JSON.stringify({ state: next }),
       });
-      if (r.status === 401) { say("Nieprawidłowe hasło", true); }
-      else if (!r.ok) { say("Nie udało się zapisać", true); }
+      if (!r.ok) { say("Nie udało się zapisać", true); }
       else {
         state = (await r.json()).state;
         render();
         say(state === 1 ? "Światło włączone" : "Światło wyłączone");
-        try { localStorage.setItem("mc_pw", pw.value); } catch (e) {}
       }
     } catch (e) { say("Brak połączenia z serwerem", true); }
     btn.disabled = false;
