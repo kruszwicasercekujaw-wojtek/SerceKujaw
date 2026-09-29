@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merry Christmas – Kruszwica Serce Kujaw</title>
+<style>
+  :root {
+    --bg: #10201a;
+    --panel: #183329;
+    --text: #f4ecd8;
+    --muted: #9fb5a8;
+    --gold: #f2b84b;
+    --red: #c8333b;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  main { width: 100%; max-width: 420px; text-align: center; }
+  h1 { font-size: 1.9rem; font-weight: 400; margin: 0 0 6px; letter-spacing: .01em; }
+  p.sub { margin: 0 0 32px; color: var(--muted); font-size: 1rem; }
+  #btn {
+    width: 220px; height: 220px; border-radius: 50%;
+    border: 6px solid var(--muted);
+    background: var(--panel); color: var(--muted);
+    font: inherit; font-size: 1.6rem; cursor: pointer;
+    transition: background .25s, color .25s, border-color .25s, box-shadow .25s;
+  }
+  #btn.on {
+    background: var(--gold); color: #3a2a05; border-color: #ffe29a;
+    box-shadow: 0 0 60px 12px rgba(242,184,75,.55);
+  }
+  #btn:focus-visible { outline: 3px solid var(--text); outline-offset: 6px; }
+  #btn:disabled { opacity: .6; cursor: wait; }
+  #status { margin-top: 28px; min-height: 1.4em; color: var(--muted); }
+  #status.err { color: #ff8a90; }
+  #pwWrap { margin-top: 24px; }
+  #pw {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--muted); background: var(--panel);
+    color: var(--text); font: inherit; text-align: center;
+  }
+  @media (prefers-reduced-motion: reduce) { #btn { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Świąteczne oświetlenie</h1>
+  <p class="sub">Kruszwica – Serce Kujaw</p>
+
+  <button id="btn" type="button" aria-pressed="false">Wyłączone</button>
+  <div id="status" role="status" aria-live="polite"></div>
+
+  <div id="pwWrap">
+    <input id="pw" type="password" placeholder="Hasło" autocomplete="current-password" aria-label="Hasło">
+  </div>
+</main>
+
+<script>
+  // Endpoint API leży w katalogu głównym projektu Vercel (/api/light)
+  const API = "/api/light";
+  const btn = document.getElementById("btn");
+  const statusEl = document.getElementById("status");
+  const pw = document.getElementById("pw");
+  let state = 0;
+
+  try { pw.value = localStorage.getItem("mc_pw") || ""; } catch (e) {}
+
+  function render() {
+    btn.classList.toggle("on", state === 1);
+    btn.setAttribute("aria-pressed", state === 1);
+    btn.textContent = state === 1 ? "Włączone" : "Wyłączone";
+  }
+
+  function say(msg, err) {
+    statusEl.textContent = msg;
+    statusEl.className = err ? "err" : "";
+  }
+
+  async function load() {
+    try {
+      const r = await fetch(API, { cache: "no-store" });
+      state = (await r.text()).trim() === "1" ? 1 : 0;
+      render();
+    } catch (e) { say("Brak połączenia z serwerem", true); }
+  }
+
+  btn.addEventListener("click", async () => {
+    const next = state === 1 ? 0 : 1;
+    btn.disabled = true;
+    say("Zapisuję…");
+    try {
+      const r = await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state: next, password: pw.value }),
+      });
+      if (r.status === 401) { say("Nieprawidłowe hasło", true); }
+      else if (!r.ok) { say("Nie udało się zapisać", true); }
+      else {
+        state = (await r.json()).state;
+        render();
+        say(state === 1 ? "Światło włączone" : "Światło wyłączone");
+        try { localStorage.setItem("mc_pw", pw.value); } catch (e) {}
+      }
+    } catch (e) { say("Brak połączenia z serwerem", true); }
+    btn.disabled = false;
+  });
+
+  load();
+  setInterval(load, 10000); // odświeżanie stanu co 10 s
+</script>
+</body>
+</html>
