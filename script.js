@@ -9,7 +9,7 @@
    ============================================================ */
 const VIDEOS = [
   {
-    title: "Polowanie Na Myszy” Pierwsza zapowiedź",
+    title: "PożegnajMY Lato Razem - Zapowiedź",
     url: "https://youtube.com/shorts/HzgW8nk-ojQ?feature=share",
     description: "PożegnajMY Lato Razem",
     date: "Wrzesień 2026",
