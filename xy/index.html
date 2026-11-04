@@ -806,6 +806,8 @@
   let player, arrows, particles, mice, blocks, coins, pickups, groundSegments, finishX, LEVEL_LENGTH;
   let zoneHillX = 0, zoneHillShown = false, towerBannerShown = false;
   let spikes, ravens, pendulums, guards, enemyArrows, bonfires, fish;
+  // Wilki za wieżą strażniczą: każdy ma 2 punkty życia (2 celne strzały), 100 pkt za sztukę.
+  let wolves = [];
   // Pochodnie w piwnicach - czysto dekoracyjne oświetlenie zamontowane na
   // murach lochów. W przeciwieństwie do ognisk (bonfires) NIE zadają
   // obrażeń królowi - służą tylko do rozjaśnienia mrocznej kondygnacji.
@@ -1049,9 +1051,86 @@
     snowCapRect(x - 1, y, s + 2, b.type === 'wall' ? 7 : 6, b.x*0.137 + b.y*0.071);
   }
 
+
+  /* ----- ogniska obok chat (czysta dekoracja - nie ranią króla) ----- */
+  const VILLAGE_FIRES = [           // x środka ogniska w świecie gry (w przerwach obok chat)
+    { x:322,  seed:1.3 },           // chata A - przy stosie drewna
+    { x:683,  seed:2.9 },           // chata B - przed studnią
+    { x:828,  seed:4.1 },           // chata C - za studnią
+    { x:1400, seed:5.7 }            // chata D - w przerwie przed wieżą
+  ];
+  function drawVillageCampfire(sx, gy, s, seed, t){
+    const fl = 1 + Math.sin(t*13 + seed)*0.10 + Math.sin(t*7.3 + seed*2)*0.06;   // migotanie
+    ctx.save();
+    // poświata na śniegu i ścianach chat
+    ctx.globalCompositeOperation = 'lighter';
+    const glow = ctx.createRadialGradient(sx, gy - 14*s, 2, sx, gy - 14*s, 80*s*fl);
+    glow.addColorStop(0, 'rgba(255,170,70,0.38)'); glow.addColorStop(0.5, 'rgba(255,120,40,0.12)'); glow.addColorStop(1, 'rgba(255,100,30,0)');
+    ctx.fillStyle = glow; ctx.fillRect(sx - 90*s, gy - 100*s, 180*s, 130*s);
+    ctx.globalCompositeOperation = 'source-over';
+    // cień pod paleniskiem
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.beginPath(); ctx.ellipse(sx, gy + 1*s, 19*s, 4.5*s, 0, 0, 6.2832); ctx.fill();
+    // kamienie wokół (tylne przed ogniem, przednie po ogniu), z czapkami śniegu
+    const stones = [];
+    for(let i = 0; i < 7; i++){
+      const a = i/7*6.2832 + 0.4;
+      stones.push({ x: sx + Math.cos(a)*14*s, y: gy - 0.5*s + Math.sin(a)*3.4*s, back: Math.sin(a) < 0, r: (3.6 + pseudoNoise(seed, i)*1.5)*s });
+    }
+    const drawStone = (st) => {
+      ctx.fillStyle = '#6a6259';
+      ctx.beginPath(); ctx.ellipse(st.x, st.y, st.r*1.15, st.r*0.85, 0, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = '#f1f6fb';
+      ctx.beginPath(); ctx.ellipse(st.x, st.y - st.r*0.2, st.r*1.0, st.r*0.55, 0, Math.PI, 6.2832); ctx.fill();
+    };
+    stones.filter(st => st.back).forEach(drawStone);
+    // skrzyżowane polana
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#3d2616'; ctx.lineWidth = 5*s;
+    ctx.beginPath(); ctx.moveTo(sx - 12*s, gy - 1*s); ctx.lineTo(sx + 11*s, gy - 9*s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx + 12*s, gy - 1*s); ctx.lineTo(sx - 11*s, gy - 9*s); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,140,50,0.55)'; ctx.lineWidth = 1.6*s;      // żarzące się grzbiety polan
+    ctx.beginPath(); ctx.moveTo(sx - 8*s, gy - 3.5*s); ctx.lineTo(sx + 8*s, gy - 8*s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx + 8*s, gy - 3.5*s); ctx.lineTo(sx - 8*s, gy - 8*s); ctx.stroke();
+    // płomienie: zewnętrzny, wewnętrzny i biały rdzeń
+    const flame = (k, c0, c1, c2) => {
+      ctx.save();
+      ctx.translate(sx, gy - 7*s);
+      ctx.rotate(Math.sin(t*5 + seed)*0.07);
+      ctx.scale(fl*s*k*1.1, fl*s*k*(1.1 + Math.sin(t*9 + seed)*0.06));
+      const g = ctx.createRadialGradient(0, -6, 2, 0, -2, 26);
+      g.addColorStop(0, c0); g.addColorStop(0.45, c1); g.addColorStop(1, c2);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(0, 4);
+      ctx.quadraticCurveTo(-13, -6, -4, -24);
+      ctx.quadraticCurveTo(-2, -14, 0, -22);
+      ctx.quadraticCurveTo(2, -14, 4, -24);
+      ctx.quadraticCurveTo(13, -6, 0, 4);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    };
+    flame(1.0,  '#fff3c4', '#ff9a3a', 'rgba(194,60,40,0)');
+    flame(0.62, '#ffffe0', '#ffd25a', 'rgba(255,170,60,0)');
+    flame(0.32, '#ffffff', '#fff1b8', 'rgba(255,230,160,0)');
+    stones.filter(st => !st.back).forEach(drawStone);
+    // iskry unoszące się nad ogniskiem
+    ctx.fillStyle = '#ffcf70';
+    for(let i = 0; i < 5; i++){
+      const ph = (t*0.7 + i/5 + seed) % 1;
+      ctx.globalAlpha = (1 - ph) * 0.9;
+      ctx.beginPath();
+      ctx.arc(sx + Math.sin(ph*6 + i*2 + seed)*7*s, gy - 18*s - ph*46*s, 1.3*s, 0, 6.2832);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   /* ----- padający śnieg (warstwa ekranowa, 3 głębie, lekki wiatr + paralaksa kamery) ----- */
   const flakes = [];
   let snowPrevCam = 0, snowLastTs = 0, snowW = 0, snowH = 0;
+  const SNOW_STOP_AFTER_MS = 8000;   // po tylu ms od startu gry śnieg przestaje padać
+  let snowStopAt = 0;                // 0 = pada bez końca (menu); inaczej - moment zakończenia opadów
   function initFlakes(){
     flakes.length = 0;
     for(let i = 0; i < WINTER.flakes; i++){
@@ -1072,6 +1151,8 @@
     let dt = snowLastTs ? (now - snowLastTs)/1000 : 0.016;
     snowLastTs = now; dt = Math.min(dt, 0.05);
     const dCam = cameraX - snowPrevCam; snowPrevCam = cameraX;
+    const kFade = snowStopAt ? clamp((snowStopAt - now)/1000, 0, 1) : 1;   // ostatnia sekunda - płatki gasną
+    if(kFade <= 0) return;
     const wind = 14 + Math.sin(now/3500)*8;
     const gy = GROUND_Y(), span = W + 12;
     ctx.save();
@@ -1081,7 +1162,7 @@
       f.x += (wind*(0.5 + f.layer*0.4) + Math.sin(now/900 + f.ph)*f.sw)*dt - dCam*(0.35 + f.layer*0.3);
       if(f.y > gy + 4 + f.layer*10){ f.y = -4; f.x = Math.random()*W; }
       if(f.x < -6 || f.x > W + 6) f.x = ((f.x + 6) % span + span) % span - 6;
-      ctx.globalAlpha = 0.45 + f.layer*0.2;
+      ctx.globalAlpha = (0.45 + f.layer*0.2) * kFade;
       ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.2832); ctx.fill();
     }
     ctx.restore();
@@ -1281,6 +1362,7 @@
     shipX = 0; shipBoarded = false; shipArrived = false;
     zoneHillShown = false; towerBannerShown = false;
     inDungeon = false; savedMain = null; dungeonExitTriggered = false; dungeonVisited = false;
+    wolves = [];
     let cx = 0;
     const ROW = () => GROUND_Y() - 130;
 
@@ -1441,6 +1523,10 @@
       ];
       villagePalEnd = TOWER_X + TOWER_W * 0.165; // palisada kończy się na pierwszej (lewej) belce wieży
       addGround(Math.round(TOWER_X + TOWER_W + 162));
+      // Dwa wilki tuż za drewnianą wieżą "STARA ZIEMIA"
+      [TOWER_X + TOWER_W + 45, TOWER_X + TOWER_W + 135].forEach((wx, i) => {
+        wolves.push({ x:wx, homeX:wx, range:10, dir:-1, alive:true, hp:2, maxHp:2, flashT:0, bobT:i*1.9, deathT:0, r:22 });
+      });
       const vc = (x, dy) => coins.push({ x, y:GROUND_Y()-90+dy, taken:false, t:Math.random()*10 });
       // przy starcie - monety na wysokości piersi, wystarczy przejść
       vc(190,48); vc(232,48); vc(274,48);
@@ -1757,7 +1843,7 @@
   function buildDungeonLevel(){
     groundSegments = []; blocks = []; coins = []; mice = []; pickups = [];
     spikes = []; ravens = []; pendulums = []; guards = []; bonfires = []; torches = []; pits = []; fish = [];
-    arrows = []; enemyArrows = [];
+    arrows = []; enemyArrows = []; wolves = [];
     dungeonExitTriggered = false;
     const floorY = GROUND_Y() - BLOCK; // szczyt skrzyń tworzących podłogę
     const startPad = 30;
@@ -1818,7 +1904,7 @@
 
   function enterDungeon(){
     savedMain = {
-      groundSegments, blocks, coins, mice, pickups, spikes, ravens, pendulums, guards, bonfires, torches, pits, fish,
+      groundSegments, blocks, coins, mice, pickups, spikes, ravens, pendulums, guards, bonfires, torches, pits, fish, wolves,
       arrows, enemyArrows, LEVEL_LENGTH, cameraX, checkpointX
     };
     inDungeon = true;
@@ -1836,6 +1922,7 @@
     mice = savedMain.mice; pickups = savedMain.pickups; spikes = savedMain.spikes;
     ravens = savedMain.ravens; pendulums = savedMain.pendulums; guards = savedMain.guards;
     bonfires = savedMain.bonfires; torches = savedMain.torches; pits = savedMain.pits; fish = savedMain.fish; arrows = savedMain.arrows; enemyArrows = savedMain.enemyArrows;
+    wolves = savedMain.wolves || [];
     LEVEL_LENGTH = savedMain.LEVEL_LENGTH; cameraX = savedMain.cameraX; checkpointX = savedMain.checkpointX;
     inDungeon = false;
     savedMain = null;
@@ -2364,6 +2451,55 @@
     }
   }
 
+  /* ============ Wilki ============
+     Dwa wilki pilnują drogi tuż za wieżą. Zabić je można wyłącznie strzałami:
+     każdy wilk ma 2 punkty życia, więc trzeba w niego trafić 2 razy. Za każdego
+     zabitego król dostaje równo 100 pkt (bez mnożnika combo/fortuny). Dotknięcie
+     wilka kosztuje życie, ale skok na jego grzbiet tylko odbija króla w górę. */
+  function updateWolves(dt){
+    const floor = GROUND_Y();
+    for(const w of wolves){
+      if(!w.alive){ w.deathT += dt; continue; }
+      w.bobT += dt;
+      if(w.flashT>0) w.flashT = Math.max(0, w.flashT - dt*1000);
+      w.x = w.homeX + Math.sin(w.bobT*1.3) * w.range;            // czujne przestępowanie w miejscu
+      const pc = player.x + PLAYER_W/2;
+      if(Math.abs(pc - w.x) > 6) w.dir = pc < w.x ? -1 : 1;     // zawsze pyskiem do króla
+      const wx1 = w.x - w.r*0.9, wx2 = w.x + w.r*0.9, wy1 = floor - 34, wy2 = floor;
+      const px1 = player.x, px2 = player.x + PLAYER_W, py1 = player.y, py2 = player.y + PLAYER_H;
+      if(px2 > wx1 && px1 < wx2 && py2 > wy1 && py1 < wy2){
+        if(player.vy > 0 && py2 - (player.vy*dt) <= wy1 + 8){
+          player.vy = -330; sfx.stomp();                         // odbicie od grzbietu, bez obrażeń
+        } else if(player.invuln <= 0){
+          loseLife();
+          if(state === STATE.PLAY){
+            player.vx = (pc < w.x ? -1 : 1) * 280; player.vy = -240;
+            sfx.hurt();
+            spawnBurst(player.x+PLAYER_W/2, player.y+PLAYER_H/2, '#c24a3e', null, true);
+          }
+        }
+      }
+    }
+  }
+  function hitWolf(w, y){
+    w.hp--;
+    w.flashT = 220;
+    sfx.hit();
+    if(w.hp <= 0){
+      w.alive = false; w.deathT = 0;
+      kills++;
+      score += 100; scoreVal.textContent = score;
+      spawnBurst(w.x, y, '#8b9199', null);                 // rozpada się jak mysz - w obłok cząsteczek
+      spawnBurst(w.x + 16*w.dir, y - 10, '#cfd4da', null);
+      spawnBurst(w.x - 15*w.dir, y + 2, '#5d636c', null);
+      particles.push({x:w.x, y:y-28, vx:0, vy:-54, life:1.6, color:'#ffe9a8', text:'+100 WILK!', isText:true});
+      sfx.bonus();
+    } else {
+      spawnBurst(w.x, y, '#e3e7ec', null, true);
+      particles.push({x:w.x, y:y-28, vx:0, vy:-42, life:1, color:'#ffffff', text:`${w.hp}/${w.maxHp}`, isText:true});
+    }
+  }
+
   /* ============ Kolce (spikes) ============ */
   function updateSpikes(dt){
     for(const s of spikes){
@@ -2596,6 +2732,17 @@
           a.alive = false;
           hitMouse(m, mouseY, 'arrow');
           break;
+        }
+      }
+      if(a.alive){
+        for(const w of wolves){
+          if(!w.alive) continue;
+          const fy = GROUND_Y();
+          if(Math.abs(a.x - w.x) < w.r + 8 && a.y > fy - 46 && a.y < fy + 4){
+            a.alive = false;
+            hitWolf(w, fy - 18);
+            break;
+          }
         }
       }
       if(a.alive){
@@ -3075,6 +3222,82 @@
   // część (taras, dach, tablica). Dawną bramę zastępują 4 pionowe, drewniane belki
   // podpierające taras oraz drabinka - czysto dekoracyjna (bez kolizji, Król nie
   // może się na nią wspiąć).
+  // Strażnik patrolujący taras wieży "STARA ZIEMIA": idzie od lewej do prawej strony tarasu,
+  // przystaje, zawraca i wraca. Czysta dekoracja (nie ma kolizji, niczego nie strzela).
+  // Rysowany PRZED sprite'em wieży, więc widać go w oknach - za palami i słupami tarasu.
+  // Współrzędne w pikselach sprite'a wieży (k = skala sprite'a na ekranie).
+  function drawTowerGuard(sx, topY, k, t){
+    const FLOOR = 203, MIN_X = 60, MAX_X = 386, SPEED = 38, PAUSE = 1.2;
+    const range = MAX_X - MIN_X, walk = range / SPEED, cycle = 2*(walk + PAUSE);
+    const u = ((t % cycle) + cycle) % cycle;
+    let gx, dir = 1, moving = true;
+    if(u < walk){ gx = MIN_X + range*(u/walk); dir = 1; }                                   // w prawo
+    else if(u < walk + PAUSE){ gx = MAX_X; dir = 1; moving = false; }                       // wypatruje z prawej
+    else if(u < 2*walk + PAUSE){ gx = MAX_X - range*((u - walk - PAUSE)/walk); dir = -1; }  // z powrotem
+    else { gx = MIN_X; dir = -1; moving = false; }                                          // wypatruje z lewej
+    const step = moving ? Math.sin(t*7.5) : 0;
+    const bob = moving ? Math.abs(Math.cos(t*7.5))*1.1 : Math.sin(t*2)*0.4;
+    ctx.save();
+    ctx.translate(sx + gx*k, topY + FLOOR*k);
+    ctx.scale(k*dir, k);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // dalsza noga + but
+    ctx.strokeStyle = '#33261a'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(0, -23 - bob); ctx.lineTo(-step*7, -2); ctx.stroke();
+    ctx.fillStyle = '#1a120b';
+    ctx.beginPath(); ctx.ellipse(-step*7 + 2, -1.6, 4.6, 2.6, 0, 0, 6.2832); ctx.fill();
+    ctx.save(); ctx.translate(0, -bob);
+    // tarcza na plecach
+    ctx.fillStyle = '#6b4a2c';
+    ctx.beginPath(); ctx.arc(-6, -34, 6.5, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#b9bec4';
+    ctx.beginPath(); ctx.arc(-6, -34, 2, 0, 6.2832); ctx.fill();
+    // opończa (powiewa za plecami)
+    ctx.fillStyle = '#5a211e';
+    ctx.beginPath();
+    ctx.moveTo(-6, -44); ctx.quadraticCurveTo(-14 - step*1.2, -34, -12 - step*1.5, -22); ctx.lineTo(-5, -24); ctx.closePath(); ctx.fill();
+    // włócznia (trzonek za ręką)
+    const spx = 10 + step*0.8;
+    ctx.strokeStyle = '#6b4a2c'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(spx, -1 + bob); ctx.lineTo(spx, -68); ctx.stroke();
+    ctx.fillStyle = '#c8cdd2';
+    ctx.beginPath(); ctx.moveTo(spx, -78); ctx.lineTo(spx - 2.6, -67); ctx.lineTo(spx + 2.6, -67); ctx.closePath(); ctx.fill();
+    // tułów (tunika) + pas
+    ctx.fillStyle = '#7a2f2a';
+    ctx.beginPath();
+    ctx.moveTo(-7, -45); ctx.lineTo(7, -45); ctx.lineTo(8.5, -23); ctx.lineTo(-8.5, -23); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#3a2a1a'; ctx.fillRect(-8.5, -28, 17, 3.2);
+    ctx.fillStyle = '#d6b25a'; ctx.fillRect(-1.5, -28, 3, 3.2);
+    ctx.fillStyle = '#e8e4dc';                                             // futrzany kołnierz (zima)
+    ctx.beginPath(); ctx.ellipse(0, -44.5, 7.6, 2.6, 0, 0, 6.2832); ctx.fill();
+    // głowa
+    ctx.fillStyle = '#e0b890';
+    ctx.beginPath(); ctx.arc(1, -51, 5.6, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#1b130c';
+    ctx.beginPath(); ctx.arc(3.6, -51.4, 0.95, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = '#6b4a2c'; ctx.lineWidth = 1.3;                      // wąs
+    ctx.beginPath(); ctx.moveTo(2, -48.6); ctx.lineTo(6.2, -48.2); ctx.stroke();
+    // hełm stożkowy z nosalem
+    ctx.fillStyle = '#aeb4bb';
+    ctx.beginPath();
+    ctx.moveTo(-6.6, -52.5); ctx.lineTo(-4, -60); ctx.lineTo(1, -66.5); ctx.lineTo(5, -60); ctx.lineTo(7, -52.5); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#7d848b'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(-6.8, -52.5); ctx.lineTo(7.2, -52.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(5.2, -52.5); ctx.lineTo(5.2, -48.2); ctx.stroke();
+    // bliższa noga + but
+    ctx.strokeStyle = '#3d2c1c'; ctx.lineWidth = 5.4;
+    ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(step*7, -2 + bob); ctx.stroke();
+    ctx.fillStyle = '#1e150d';
+    ctx.beginPath(); ctx.ellipse(step*7 + 2, -1.6 + bob, 4.8, 2.7, 0, 0, 6.2832); ctx.fill();
+    // ręka trzymająca włócznię
+    ctx.strokeStyle = '#7a2f2a'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(1, -43); ctx.lineTo(spx, -34 + step*0.8); ctx.stroke();
+    ctx.fillStyle = '#e0b890';
+    ctx.beginPath(); ctx.arc(spx, -34 + step*0.8, 2.2, 0, 6.2832); ctx.fill();
+    ctx.restore();
+    ctx.restore();
+  }
+
   function drawWatchtower(o, sx, baseY, w, h, vs){
     const CUT = 338;                                // wysokość (px sprite'a), na której tniemy
     const nh = o.img.naturalHeight, nw = o.img.naturalWidth;
@@ -3105,6 +3328,7 @@
       }catch(e){}
       o.tinted = snowify(c, SNOW_TOWERTOP);
     }
+    drawTowerGuard(sx, topY, w / nw, idleT);     // strażnik za palami tarasu
     ctx.drawImage(o.tinted, 0, 0, nw, CUT, sx, topY, w, topH);
     // 3) drabinka (za belkami, w środkowym prześwicie) - tylko dekoracja
     const lw = w * 0.115;                           // szerokość drabinki
@@ -3220,6 +3444,12 @@
           ctx.beginPath(); ctx.arc(px, py, r, 0, 6.2832); ctx.fill();
         }
       }
+    }
+    // 3) ogniska obok chat (przed chatami, za królem)
+    for(const f of VILLAGE_FIRES){
+      const fx = f.x - cameraX;
+      if(fx < -100 || fx > W + 100) continue;
+      drawVillageCampfire(fx, gy + sink, vs, f.seed, tNow);
     }
     ctx.restore();
   }
@@ -3924,6 +4154,111 @@
     ctx.fillStyle = '#f7dc7a'; ctx.strokeStyle = '#a4791f'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.arc(0,0,10,0,7); ctx.fill(); ctx.stroke();
     ctx.restore();
+  }
+
+  // Wilk rysowany kodem (zimowa, szara sierść), pyskiem w prawo; w lewo odwracany skalą.
+  function drawWolf(w){
+    const x = w.x - cameraX;
+    if(x < -90 || x > W + 90) return;
+    if(!w.alive) return;                            // martwy wilk znika od razu (rozpadł się na cząsteczki)
+    const gy = GROUND_Y();
+    const t = idleT + w.bobT;
+    const flash = w.flashT > 0;
+    const fur  = flash ? '#ffffff' : '#8b9199';
+    const furD = flash ? '#ffe4de' : '#5d636c';
+    const furL = flash ? '#ffffff' : '#cfd4da';
+    ctx.save();
+    ctx.translate(x, gy);
+    ctx.scale(w.dir, 1);
+    const br = Math.sin(t*3)*0.8;                   // oddech
+    const sw = Math.sin(t*5) * 2;                   // przestępowanie
+    // cień
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath(); ctx.ellipse(0, 1, 26, 4, 0, 0, 6.2832); ctx.fill();
+    // ogon (puszysty, kołysze się)
+    const tw = Math.sin(t*4)*3;
+    ctx.fillStyle = fur;
+    ctx.beginPath();
+    ctx.moveTo(-18, -23);
+    ctx.quadraticCurveTo(-34, -25 + tw, -37, -11 + tw*0.5);
+    ctx.quadraticCurveTo(-29, -18, -17, -16);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = furL;
+    ctx.beginPath(); ctx.arc(-36, -12 + tw*0.5, 2.6, 0, 6.2832); ctx.fill();
+    // tylne nogi (dalsze, ciemniejsze)
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = furD; ctx.lineWidth = 4.2;
+    ctx.beginPath(); ctx.moveTo(-12, -15); ctx.lineTo(-13 - sw, -1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(14, -15);  ctx.lineTo(15 + sw, -1);  ctx.stroke();
+    // tułów
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.ellipse(0, -19 + br*0.4, 21, 10.5 + br*0.3, 0, 0, 6.2832); ctx.fill();
+    ctx.globalAlpha *= 0.65; ctx.fillStyle = furL;
+    ctx.beginPath(); ctx.ellipse(1, -14.5, 18, 5.5, 0, 0, 6.2832); ctx.fill();   // jasny brzuch
+    ctx.fillStyle = furD;
+    ctx.beginPath(); ctx.ellipse(-2, -25, 17, 4.6, 0, 0, 6.2832); ctx.fill();    // ciemne siodło
+    ctx.globalAlpha /= 0.65;
+    // bliższe nogi
+    ctx.strokeStyle = fur; ctx.lineWidth = 4.6;
+    ctx.beginPath(); ctx.moveTo(-6, -14); ctx.lineTo(-7 + sw, -1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(8, -14);  ctx.lineTo(9 - sw, -1);  ctx.stroke();
+    ctx.fillStyle = furD;
+    for(const px of [-7 + sw, 9 - sw, -13 - sw, 15 + sw]){ ctx.beginPath(); ctx.ellipse(px + 1, -0.8, 3.2, 1.8, 0, 0, 6.2832); ctx.fill(); }
+    // kark / kryza
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.ellipse(15, -24 + br*0.4, 9, 9, 0, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = furL;
+    for(let i = 0; i < 4; i++){
+      ctx.beginPath();
+      ctx.moveTo(19, -17 + i*3.4); ctx.lineTo(24, -15.5 + i*3.4); ctx.lineTo(19, -14 + i*3.4); ctx.closePath(); ctx.fill();
+    }
+    // głowa (lekko kiwa się przy warczeniu)
+    const hx = 27, hy = -28 + Math.sin(t*2.2)*0.8;
+    ctx.fillStyle = furD;                                                   // dalsze ucho
+    ctx.beginPath(); ctx.moveTo(hx-7, hy-5); ctx.lineTo(hx-6, hy-15); ctx.lineTo(hx-1, hy-6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.ellipse(hx, hy, 8, 7, 0, 0, 6.2832); ctx.fill();   // czaszka
+    ctx.fillStyle = furL;                                                   // kufa
+    ctx.beginPath();
+    ctx.moveTo(hx+3, hy-4); ctx.lineTo(hx+17, hy-1); ctx.quadraticCurveTo(hx+19, hy+3, hx+14, hy+4); ctx.lineTo(hx+4, hy+5); ctx.closePath(); ctx.fill();
+    const jaw = 1.5 + (Math.sin(t*3)*0.5 + 0.5)*3;                          // warczenie
+    ctx.fillStyle = '#3a2424';
+    ctx.beginPath(); ctx.moveTo(hx+4, hy+4.5); ctx.lineTo(hx+15, hy+3.8); ctx.lineTo(hx+13, hy+4 + jaw); ctx.lineTo(hx+5, hy+7 + jaw); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffffff';                                              // kły
+    for(const fx of [8.5, 12.5]){ ctx.beginPath(); ctx.moveTo(hx+fx, hy+3.8); ctx.lineTo(hx+fx+2, hy+3.8); ctx.lineTo(hx+fx+1, hy+3.8 + 2.6 + jaw*0.3); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle = '#17171a';                                              // nos
+    ctx.beginPath(); ctx.arc(hx+17.5, hy-0.4, 2, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = fur;                                                    // bliższe ucho
+    ctx.beginPath(); ctx.moveTo(hx-3, hy-5); ctx.lineTo(hx-1, hy-16); ctx.lineTo(hx+5, hy-6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = furD;
+    ctx.beginPath(); ctx.moveTo(hx-1.2, hy-6.5); ctx.lineTo(hx-0.6, hy-12.5); ctx.lineTo(hx+2.6, hy-6.5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffc247';                                              // oko
+    ctx.beginPath(); ctx.ellipse(hx+6, hy-2, 2.2, 1.4, 0, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#1a1208';
+    ctx.beginPath(); ctx.arc(hx+6.4, hy-2, 0.7, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = furD; ctx.lineWidth = 1.5;                            // groźna brew
+    ctx.beginPath(); ctx.moveTo(hx+2.5, hy-5.5); ctx.lineTo(hx+9, hy-3); ctx.stroke();
+    // para z pyska w mroźnym powietrzu
+    if(w.alive){
+      ctx.fillStyle = '#ffffff';
+      for(let i = 0; i < 2; i++){
+        const ph = (t*0.8 + i*0.5) % 1;
+        ctx.globalAlpha = (1 - ph) * 0.5;
+        ctx.beginPath(); ctx.arc(hx + 20 + ph*11, hy - 1 - ph*6, 1.4 + ph*3, 0, 6.2832); ctx.fill();
+      }
+    }
+    ctx.restore();
+    // znaczniki życia nad wilkiem: 2 trafienia = jeden wilk
+    if(w.alive){
+      ctx.save();
+      for(let i = 0; i < w.maxHp; i++){
+        const px = x + (i - (w.maxHp - 1)/2)*11, py = gy - 56;
+        ctx.beginPath(); ctx.arc(px, py, 3.6, 0, 6.2832);
+        ctx.fillStyle = i < w.hp ? '#e04a3e' : 'rgba(20,20,26,0.45)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1; ctx.stroke();
+      }
+      ctx.restore();
+    }
   }
 
   function drawMouse(m){
@@ -4640,6 +4975,7 @@
       updatePlayer(dt);
       updateShip(dt);
       updateMice(dt);
+      updateWolves(dt);
       updateFish(dt);
       updateRavens(dt);
       updateSpikes(dt);
@@ -4732,6 +5068,7 @@
     for(const c of coins) drawCoin(c);
     for(const p of pickups) drawPickup(p);
     for(const m of mice) drawMouse(m);
+    for(const w of wolves) drawWolf(w);
     for(const p of pendulums) drawPendulum(p);
     for(const fi of fish) drawFish(fi);
     for(const r of ravens) drawRaven(r);
@@ -4748,6 +5085,7 @@
   /* ============ Game flow ============ */
   function startGame(){
     nickname = (nickInput.value || 'Król').trim().slice(0,16) || 'Król';
+    snowStopAt = performance.now() + SNOW_STOP_AFTER_MS;
     buildLevel();
     resetPlayer(60);
     checkpointX = 40;
@@ -4821,6 +5159,7 @@
 
   function returnToIdle(){
     state = STATE.MENU;
+    snowStopAt = 0;                     // w menu znów sypie
     buildLevel();
     arrows = []; particles = []; pickups = []; enemyArrows = [];
     menuScreen.classList.remove('hidden');
