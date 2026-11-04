@@ -1053,11 +1053,96 @@
 
 
   /* ----- ogniska obok chat (czysta dekoracja - nie ranią króla) ----- */
+  // --- Zagroda na początku wioski + kury biegające po wiosce ---
+  const VSHIFT = 260;                 // o tyle przesunięta jest cała wioska w prawo (miejsce na zagrodę)
+  const PEN_X = 108, PEN_W = 240;     // zagroda: lewy brzeg i szerokość (świat, px)
+  let hens = [], farm = null;
+
+  function initVillageLife(towerX, towerW){
+    const penEnd = PEN_X + PEN_W;
+    farm = {
+      horse: { x: PEN_X + PEN_W*0.5, minX: PEN_X + 62, maxX: penEnd - 62, dir: 1, mode:'stand', timer: rand(0.5,2), head: 0, t: Math.random()*10 },
+      pigs: [
+        { x: PEN_X + 40,       minX: PEN_X + 18,   maxX: PEN_X + 88,   dir: 1,  mode:'sniff', timer: rand(0.5,2), head: 0, t: Math.random()*10 },
+        { x: penEnd - 44,      minX: penEnd - 92,  maxX: penEnd - 18,  dir: -1, mode:'walk',  timer: rand(0.5,2), head: 0, t: Math.random()*10 }
+      ]
+    };
+    hens = [];
+    const pal = [
+      { b:'#f3ede0', d:'#cfc5b2' },   // biała
+      { b:'#b5702f', d:'#85501f' },   // ruda
+      { b:'#7b5b44', d:'#5a3f2c' },   // brązowa
+      { b:'#35302f', d:'#1d1918' },   // czarna
+      { b:'#d9b77a', d:'#b08f52' }    // złotawa
+    ];
+    const mk = (x, minX, maxX, i) => hens.push({
+      x, minX, maxX, dir: Math.random()<0.5 ? -1 : 1, mode:'idle', timer: rand(0.2,2.2),
+      t: Math.random()*10, step: Math.random()*10, col: pal[i % pal.length]
+    });
+    // dwie kury tuż przy starcie (przed zagrodą) i kilka na reszcie wioski
+    mk(34, 20, PEN_X - 12, 0); mk(78, 20, PEN_X - 12, 1);
+    const hMin = penEnd + 14, hMax = towerX + towerW*0.12, n = 6;
+    for(let i = 0; i < n; i++) mk(hMin + (i + 0.5)/n*(hMax - hMin) + rand(-20,20), hMin, hMax, i + 2);
+  }
+
+  function updateVillageLife(dt){
+    if(farm){
+      const hr = farm.horse;
+      hr.t += dt; hr.timer -= dt;
+      if(hr.timer <= 0){
+        const r = Math.random();
+        if(r < 0.40){ hr.mode = 'graze'; hr.timer = rand(2.5, 5); }
+        else if(r < 0.72){ hr.mode = 'walk'; hr.timer = rand(1.5, 3); hr.dir = Math.random()<0.5 ? -1 : 1; }
+        else { hr.mode = 'stand'; hr.timer = rand(1.5, 3.5); }
+      }
+      hr.head += ((hr.mode === 'graze' ? 1 : 0) - hr.head) * Math.min(1, dt*2.2);
+      if(hr.mode === 'walk'){
+        hr.x += hr.dir * 17 * dt;
+        if(hr.x < hr.minX){ hr.x = hr.minX; hr.dir = 1; }
+        if(hr.x > hr.maxX){ hr.x = hr.maxX; hr.dir = -1; }
+      }
+      for(const p of farm.pigs){
+        p.t += dt; p.timer -= dt;
+        if(p.timer <= 0){
+          const r = Math.random();
+          if(r < 0.45){ p.mode = 'sniff'; p.timer = rand(1.5, 3.5); }
+          else if(r < 0.85){ p.mode = 'walk'; p.timer = rand(1.2, 2.8); p.dir = Math.random()<0.5 ? -1 : 1; }
+          else { p.mode = 'idle'; p.timer = rand(0.8, 2); }
+        }
+        p.head += ((p.mode === 'sniff' ? 1 : 0) - p.head) * Math.min(1, dt*4);
+        if(p.mode === 'walk'){
+          p.x += p.dir * 22 * dt;
+          if(p.x < p.minX){ p.x = p.minX; p.dir = 1; }
+          if(p.x > p.maxX){ p.x = p.maxX; p.dir = -1; }
+        }
+      }
+    }
+    const px = (state === STATE.PLAY && player) ? player.x + PLAYER_W/2 : -99999;
+    const nearGround = (state === STATE.PLAY && player) ? (player.y + PLAYER_H > GROUND_Y() - 45) : false;
+    for(const h of hens){
+      h.t += dt; h.timer -= dt;
+      const dx = h.x - px;
+      if(nearGround && Math.abs(dx) < 48){            // król podbiega - kura ucieka z kwaknięciem
+        h.mode = 'flee'; h.timer = 0.6; h.dir = dx >= 0 ? 1 : -1;
+      } else if(h.timer <= 0){
+        const r = Math.random();
+        if(r < 0.42){ h.mode = 'peck'; h.timer = rand(1.2, 3); }
+        else if(r < 0.80){ h.mode = 'walk'; h.timer = rand(1, 3.2); h.dir = Math.random()<0.5 ? -1 : 1; }
+        else { h.mode = 'idle'; h.timer = rand(0.6, 1.8); }
+      }
+      const sp = h.mode === 'flee' ? 95 : (h.mode === 'walk' ? 26 : 0);
+      h.x += h.dir * sp * dt;
+      if(h.x < h.minX){ h.x = h.minX; h.dir = 1; }
+      if(h.x > h.maxX){ h.x = h.maxX; h.dir = -1; }
+      h.step += sp * dt * 0.35;
+    }
+  }
+
   const VILLAGE_FIRES = [           // x środka ogniska w świecie gry (w przerwach obok chat)
-    { x:322,  seed:1.3 },           // chata A - przy stosie drewna
-    { x:683,  seed:2.9 },           // chata B - przed studnią
-    { x:828,  seed:4.1 },           // chata C - za studnią
-    { x:1400, seed:5.7 }            // chata D - w przerwie przed wieżą
+    { x:322+VSHIFT,  seed:1.3 },           // chata A - przy stosie drewna
+    { x:683+VSHIFT,  seed:2.9 },           // chata B - przed studnią
+    { x:828+VSHIFT,  seed:4.1 },           // chata C - za studnią
+    { x:1400+VSHIFT, seed:5.7 }            // chata D - w przerwie przed wieżą
   ];
   function drawVillageCampfire(sx, gy, s, seed, t){
     const fl = 1 + Math.sin(t*13 + seed)*0.10 + Math.sin(t*7.3 + seed*2)*0.06;   // migotanie
@@ -1510,24 +1595,25 @@
     // --- Wioska przed właściwą trasą: chaty, studnia, stóg, palisada i wieża "STARA ZIEMIA" ---
     {
       const TOWER_W = VIL.watchtower.w;
-      const TOWER_X = 1572;                      // lewy brzeg sprite'a wieży
+      const TOWER_X = 1572 + VSHIFT;                      // lewy brzeg sprite'a wieży
       villageItems = [
-        { key:'hutA',  x:120 },
-        { key:'logs',  x:332 },
-        { key:'hutB',  x:430, smoke:{ fx:0.50, fy:0.20 } },
-        { key:'well',  x:704 },
-        { key:'hutC',  x:850, smoke:{ fx:0.50, fy:0.14 } },
-        { key:'hay',   x:1048 },
-        { key:'hutD',  x:1168 },
+        { key:'hutA',  x:120+VSHIFT },
+        { key:'logs',  x:332+VSHIFT },
+        { key:'hutB',  x:430+VSHIFT, smoke:{ fx:0.50, fy:0.20 } },
+        { key:'well',  x:704+VSHIFT },
+        { key:'hutC',  x:850+VSHIFT, smoke:{ fx:0.50, fy:0.14 } },
+        { key:'hay',   x:1048+VSHIFT },
+        { key:'hutD',  x:1168+VSHIFT },
         { key:'watchtower', x:TOWER_X }
       ];
       villagePalEnd = TOWER_X + TOWER_W * 0.165; // palisada kończy się na pierwszej (lewej) belce wieży
+      initVillageLife(TOWER_X, TOWER_W);
       addGround(Math.round(TOWER_X + TOWER_W + 162));
       // Dwa wilki tuż za drewnianą wieżą "STARA ZIEMIA"
       [TOWER_X + TOWER_W + 45, TOWER_X + TOWER_W + 135].forEach((wx, i) => {
         wolves.push({ x:wx, homeX:wx, range:10, dir:-1, alive:true, hp:2, maxHp:2, flashT:0, bobT:i*1.9, deathT:0, r:22 });
       });
-      const vc = (x, dy) => coins.push({ x, y:GROUND_Y()-90+dy, taken:false, t:Math.random()*10 });
+      const vc = (x, dy) => coins.push({ x: x + VSHIFT, y:GROUND_Y()-90+dy, taken:false, t:Math.random()*10 });
       // przy starcie - monety na wysokości piersi, wystarczy przejść
       vc(190,48); vc(232,48); vc(274,48);
       // łuk nad stosem drewna
@@ -1540,7 +1626,9 @@
       vc(1066,14); vc(1094,-10); vc(1122,14);
       // przed wieżą i tuż pod tablicą
       vc(1420,48); vc(1456,48);
-      vc(TOWER_X + TOWER_W / 2, 20);
+      vc(TOWER_X - VSHIFT + TOWER_W / 2, 20);
+      // łuk monet nad zagrodą
+      [PEN_X + 50, PEN_X + PEN_W/2, PEN_X + PEN_W - 50].forEach((coinX, ci) => coins.push({ x:coinX, y:GROUND_Y()-90+[14,-8,14][ci], taken:false, t:Math.random()*10 }));
     }
 
     // --- Start: safe run-up ---
@@ -3396,6 +3484,203 @@
     ctx.fillRect(sx + w * 0.10, baseY - 2, w * 0.80, 3);
   }
 
+  /* ============ Zagroda (koń + dwie świnki) i kury ============ */
+  function drawHorse(h, sx, gy, s){
+    const hd = h.head;
+    const br = Math.sin(h.t*2.2)*0.8;
+    const tw = Math.sin(h.t*2.7)*4;
+    const walking = h.mode === 'walk';
+    const sw = walking ? Math.sin(h.t*5)*5 : 0;
+    const body = '#8a5a35', bodyD = '#5c3a20', mane = '#2f1f14', muzzle = '#b98a62', hoof = '#2a1c12';
+    ctx.save();
+    ctx.translate(sx, gy - 3*s); ctx.scale(h.dir*s, s);
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath(); ctx.ellipse(0, 3, 34, 4, 0, 0, 6.2832); ctx.fill();
+    ctx.lineCap = 'round';
+    // dalsze nogi
+    ctx.strokeStyle = bodyD; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(-17, -34); ctx.lineTo(-17 + sw, -3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(19, -34);  ctx.lineTo(19 - sw, -3);  ctx.stroke();
+    // ogon
+    ctx.fillStyle = mane;
+    ctx.beginPath();
+    ctx.moveTo(-29, -53);
+    ctx.quadraticCurveTo(-46, -48, -42 + tw, -24);
+    ctx.quadraticCurveTo(-36 + tw, -34, -26, -44);
+    ctx.closePath(); ctx.fill();
+    // tułów
+    ctx.fillStyle = body;
+    ctx.beginPath(); ctx.ellipse(0, -46 + br*0.3, 31, 15, 0, 0, 6.2832); ctx.fill();
+    ctx.globalAlpha = 0.35; ctx.fillStyle = muzzle;
+    ctx.beginPath(); ctx.ellipse(2, -39, 26, 6, 0, 0, 6.2832); ctx.fill();
+    ctx.globalAlpha = 1;
+    // bliższe nogi
+    ctx.strokeStyle = body; ctx.lineWidth = 5.6;
+    ctx.beginPath(); ctx.moveTo(-24, -36); ctx.lineTo(-24 - sw, -3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(25, -36);  ctx.lineTo(25 + sw, -3);  ctx.stroke();
+    ctx.fillStyle = hoof;
+    for(const hx of [-17 + sw, 19 - sw, -24 - sw, 25 + sw]){ ctx.beginPath(); ctx.ellipse(hx + 1, -2, 3.6, 2.3, 0, 0, 6.2832); ctx.fill(); }
+    // szyja
+    const nx = 40 + 6*hd, ny = -72 + 34*hd + br*0.3;
+    ctx.strokeStyle = body; ctx.lineWidth = 14;
+    ctx.beginPath(); ctx.moveTo(20, -50); ctx.lineTo(nx, ny); ctx.stroke();
+    // grzywa
+    ctx.strokeStyle = mane; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(15, -57); ctx.lineTo(nx - 6, ny - 6); ctx.stroke();
+    // głowa
+    const a = 0.45 + 0.8*hd;
+    ctx.save();
+    ctx.translate(nx + Math.cos(a)*8, ny + Math.sin(a)*8); ctx.rotate(a);
+    ctx.fillStyle = body;
+    ctx.beginPath(); ctx.ellipse(0, 0, 11, 6, 0, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = muzzle;
+    ctx.beginPath(); ctx.ellipse(9, 0.8, 5.5, 5, 0, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#1b130d';
+    ctx.beginPath(); ctx.arc(12, 0, 0.9, 0, 6.2832); ctx.fill();          // chrapy
+    ctx.beginPath(); ctx.arc(1, -2, 1.3, 0, 6.2832); ctx.fill();           // oko
+    ctx.fillStyle = bodyD;                                                  // ucho
+    ctx.beginPath(); ctx.moveTo(-5, -4); ctx.lineTo(-8, -12); ctx.lineTo(-1, -5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#f1e9da';                                              // gwiazdka na czole
+    ctx.beginPath(); ctx.ellipse(3.5, -3.2, 2, 1.1, 0.4, 0, 6.2832); ctx.fill();
+    ctx.restore();
+    ctx.restore();
+  }
+
+  function drawPig(p, sx, gy, s){
+    const sn = p.head;
+    const walking = p.mode === 'walk';
+    const sw = walking ? Math.sin(p.t*8)*3 : 0;
+    const bob = walking ? Math.abs(Math.sin(p.t*8))*0.8 : Math.sin(p.t*2.4)*0.4;
+    const pink = '#f2a7aa', pinkD = '#e58f94', pinkS = '#e58a90', pinkL = '#f8c4c4';
+    ctx.save();
+    ctx.translate(sx, gy + 1*s); ctx.scale(p.dir*s, s);
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath(); ctx.ellipse(1, 1, 19, 3, 0, 0, 6.2832); ctx.fill();
+    ctx.lineCap = 'round';
+    // dalsze nogi
+    ctx.strokeStyle = '#c07578'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(-9, -8); ctx.lineTo(-9 + sw, -1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10, -8); ctx.lineTo(10 - sw, -1); ctx.stroke();
+    // zakręcony ogonek
+    ctx.strokeStyle = '#e08f93'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(-19, -17 - bob, 3, 0.5, 5.3); ctx.stroke();
+    // tułów
+    ctx.fillStyle = pink;
+    ctx.beginPath(); ctx.ellipse(0, -14 - bob, 17, 11, 0, 0, 6.2832); ctx.fill();
+    ctx.globalAlpha = 0.7; ctx.fillStyle = pinkL;
+    ctx.beginPath(); ctx.ellipse(1, -9.5 - bob, 13, 4.8, 0, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = pinkD; ctx.globalAlpha = 0.6;
+    ctx.beginPath(); ctx.ellipse(-2, -22 - bob, 13, 3.4, 0, 0, 6.2832); ctx.fill();
+    ctx.globalAlpha = 1;
+    // bliższe nogi + racice
+    ctx.strokeStyle = '#ef9da1'; ctx.lineWidth = 4.4;
+    ctx.beginPath(); ctx.moveTo(-4, -8); ctx.lineTo(-4 - sw, -1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(13, -8); ctx.lineTo(13 + sw, -1); ctx.stroke();
+    ctx.fillStyle = '#8a4a50';
+    for(const hx of [-9 + sw, 10 - sw, -4 - sw, 13 + sw]){ ctx.beginPath(); ctx.ellipse(hx + 0.5, -0.8, 2.6, 1.5, 0, 0, 6.2832); ctx.fill(); }
+    // głowa (przy węszeniu opuszczona)
+    const hx = 17 + 2*sn, hy = -15 - bob + 6*sn;
+    ctx.fillStyle = pinkD;                                                  // ucho
+    ctx.beginPath(); ctx.moveTo(hx - 4, hy - 5); ctx.lineTo(hx - 2, hy - 13); ctx.lineTo(hx + 3, hy - 6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = pink;
+    ctx.beginPath(); ctx.arc(hx, hy, 8, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = pinkS;                                                  // ryjek
+    ctx.beginPath(); ctx.ellipse(hx + 7, hy + 2.2, 4.6, 3.8, 0, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#7a3a40';
+    ctx.beginPath(); ctx.arc(hx + 6.2, hy + 1.8, 0.9, 0, 6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(hx + 8.6, hy + 2.6, 0.9, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#1b130d';
+    ctx.beginPath(); ctx.arc(hx + 2.5, hy - 2.5, 1.1, 0, 6.2832); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawFarm(gy, vs){
+    if(!farm) return;
+    const x0 = PEN_X - cameraX, x1 = x0 + PEN_W;
+    if(x1 < -60 || x0 > W + 60) return;
+    const s = vs;
+    const woodD = '#4a3220', wood = '#6a4a2e', woodL = '#8a6540';
+    const nP = 7, gap = PEN_W / (nP - 1);
+    ctx.save();
+    // wydeptany śnieg i błoto w zagrodzie
+    ctx.fillStyle = 'rgba(96,68,42,0.50)';
+    ctx.beginPath(); ctx.ellipse((x0 + x1)/2, gy + 1, PEN_W/2 - 4, 5*s, 0, 0, 6.2832); ctx.fill();
+    // tylne ogrodzenie (dalszy plan)
+    const bb = gy - 5*s;
+    ctx.fillStyle = woodD;
+    ctx.fillRect(x0, bb - 36*s, PEN_W, 4*s);
+    ctx.fillRect(x0, bb - 20*s, PEN_W, 4*s);
+    for(let i = 0; i < nP; i++){
+      const px = x0 + i*gap;
+      ctx.fillStyle = woodD; ctx.fillRect(px - 2.5*s, bb - 44*s, 5*s, 44*s);
+      if(i < nP - 1) snowCapRect(px + 3*s, bb - 36*s, gap - 6*s, 3*s, 40 + i);
+      snowCapRect(px - 3*s, bb - 44*s, 6*s, 3*s, 60 + i);
+    }
+    // koryto z sianem
+    const tx = x1 - 76*s;
+    ctx.fillStyle = wood;
+    ctx.beginPath();
+    ctx.moveTo(tx, gy - 14*s); ctx.lineTo(tx + 38*s, gy - 14*s); ctx.lineTo(tx + 34*s, gy - 2*s); ctx.lineTo(tx + 4*s, gy - 2*s);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#d4b45a';
+    ctx.beginPath(); ctx.ellipse(tx + 19*s, gy - 14*s, 19*s, 4*s, 0, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = woodD; ctx.fillRect(tx + 2*s, gy - 15*s, 34*s, 2*s);
+    // zwierzęta: koń (dalej), świnki (bliżej)
+    drawHorse(farm.horse, farm.horse.x - cameraX, gy, s);
+    for(const p of farm.pigs) drawPig(p, p.x - cameraX, gy, s);
+    // przednie ogrodzenie - niskie, żeby było widać zwierzęta
+    ctx.fillStyle = woodL;
+    ctx.fillRect(x0, gy - 16*s, PEN_W, 4*s);
+    for(let i = 0; i < nP; i++){
+      const px = x0 + i*gap;
+      ctx.fillStyle = wood; ctx.fillRect(px - 3*s, gy - 34*s + 1, 6*s, 34*s);
+      ctx.fillStyle = woodL; ctx.fillRect(px - 3*s, gy - 34*s + 1, 2*s, 34*s);
+      snowCapRect(px - 3.5*s, gy - 34*s + 1, 7*s, 3*s, 80 + i);
+    }
+    ctx.restore();
+  }
+
+  function drawHen(h, gy, s){
+    const sx = h.x - cameraX;
+    if(sx < -40 || sx > W + 40) return;
+    const c = h.col;
+    const walking = h.mode === 'walk' || h.mode === 'flee';
+    const hop = h.mode === 'flee' ? Math.abs(Math.sin(h.t*20))*5*s : 0;
+    ctx.save();
+    ctx.translate(sx, gy - hop); ctx.scale(h.dir*s, s);
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath(); ctx.ellipse(0, 1 + hop/s, 11, 2.5, 0, 0, 6.2832); ctx.fill();
+    ctx.lineCap = 'round';
+    // nogi
+    const l = walking ? Math.sin(h.step*2.2)*3.2 : 0;
+    ctx.strokeStyle = '#d9a23a'; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(-2, -8); ctx.lineTo(-2 + l, -0.5); ctx.moveTo(3, -8); ctx.lineTo(3 - l, -0.5); ctx.stroke();
+    // ogon
+    ctx.fillStyle = c.d;
+    ctx.beginPath(); ctx.moveTo(-8, -11); ctx.lineTo(-15, -23); ctx.lineTo(-10, -24); ctx.lineTo(-5, -16); ctx.closePath(); ctx.fill();
+    // tułów i skrzydło
+    ctx.fillStyle = c.b;
+    ctx.beginPath(); ctx.ellipse(0, -12, 10, 7.5, 0, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = c.d; ctx.globalAlpha = 0.75;
+    ctx.beginPath(); ctx.ellipse(-1.5, -11.5, 6, 4, -0.2, 0, 6.2832); ctx.fill();
+    ctx.globalAlpha = 1;
+    // szyja i głowa (dziobanie = kiwanie głową w dół)
+    const pk = h.mode === 'peck' ? (0.5 + 0.5*Math.sin(h.t*9)) : (h.mode === 'flee' ? 0 : Math.sin(h.t*3)*0.08);
+    const hx = 9 + pk*3, hy = -21 + pk*11;
+    ctx.strokeStyle = c.b; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(6, -15); ctx.lineTo(hx, hy); ctx.stroke();
+    ctx.fillStyle = c.b;
+    ctx.beginPath(); ctx.arc(hx, hy, 3.6, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#d23a2e';                                              // grzebień i dzwonek
+    ctx.beginPath(); ctx.arc(hx - 0.8, hy - 4, 1.6, 0, 6.2832); ctx.arc(hx + 1.2, hy - 4.2, 1.4, 0, 6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(hx + 1.8, hy + 3.3, 1.2, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#e8b23a';                                              // dziób
+    ctx.beginPath(); ctx.moveTo(hx + 3, hy - 1); ctx.lineTo(hx + 7, hy + 0.5); ctx.lineTo(hx + 3, hy + 1.6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.arc(hx + 1.2, hy - 1, 0.8, 0, 6.2832); ctx.fill();
+    ctx.restore();
+  }
+
   function drawVillage(){
     if(!villageItems.length) return;
     const gy = GROUND_Y();
@@ -3421,6 +3706,7 @@
     }
     // 2) chaty, rekwizyty i wieża (skalowane względem środka sprite'a)
     const tNow = performance.now() / 1000;
+    drawFarm(gy + sink, vs);
     for(const it of villageItems){
       const o = VIL[it.key];
       if(!vilReady(o)) continue;
@@ -3451,6 +3737,8 @@
       if(fx < -100 || fx > W + 100) continue;
       drawVillageCampfire(fx, gy + sink, vs, f.seed, tNow);
     }
+    // 4) kury chodzące po wiosce
+    for(const h of hens) drawHen(h, gy + sink, vs);
     ctx.restore();
   }
 
@@ -4976,6 +5264,7 @@
       updateShip(dt);
       updateMice(dt);
       updateWolves(dt);
+      updateVillageLife(dt);
       updateFish(dt);
       updateRavens(dt);
       updateSpikes(dt);
@@ -5009,6 +5298,7 @@
       updateShieldIndicator();
     } else if(state === STATE.MENU){
       // gentle ambient preview: camera drifts, mice patrol, nothing else happens
+      updateVillageLife(dt);
       cameraX = clamp(LEVEL_LENGTH*0.06 + Math.sin(idleT*0.12)*220, 0, Math.max(0,LEVEL_LENGTH-W));
       for(const m of mice){
         m.bobT += dt;
