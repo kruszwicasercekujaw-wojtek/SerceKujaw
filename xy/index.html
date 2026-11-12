@@ -4589,6 +4589,25 @@
       ctx.lineTo(xb, prof(xb));
     };
 
+    // 0) w fosie z łodzią lustro wody leży niżej niż brzeg - pas nad nim to
+    //    dalsza część jeziora (tafla ciągnie się w głąb aż po horyzont),
+    //    a nie brązowy "drugi brzeg"
+    if(wTop > gy){
+      const lg = ctx.createLinearGradient(0, gy, 0, wTop + 2);
+      lg.addColorStop(0, '#b9dcef');
+      lg.addColorStop(0.5, '#9fd3ee');
+      lg.addColorStop(1, 'rgba(127,212,242,1)');
+      ctx.fillStyle = lg;
+      ctx.fillRect(xa, gy - 1, xb - xa, wTop - gy + 3);
+      // delikatne odbłyski na dalekiej tafli
+      const tN = (lastTs||0)*0.001;
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      for(let i = 0; i < 9; i++){
+        const px = xa + ((i*97 + cameraX*0.15 + tN*6) % (xb - xa + 40)) - 20;
+        const py = gy + 3 + (i % 3)*4;
+        ctx.fillRect(px, py, 10 + (i % 4)*5, 1);
+      }
+    }
     // 1) ziemia pod i wokół wody (dno + skarpy), ta sama tekstura co grunt
     ctx.save();
     ctx.beginPath(); trace(); ctx.lineTo(xb, H+2); ctx.lineTo(xa, H+2); ctx.closePath(); ctx.clip();
