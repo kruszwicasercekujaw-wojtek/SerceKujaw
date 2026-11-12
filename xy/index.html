@@ -11,6 +11,26 @@
 <meta name="color-scheme" content="dark">
 <meta name="format-detection" content="telephone=no">
 <title>Kruszwica - Wyprawa Króla</title>
+<!-- Podgląd linku (miniaturka) w Messengerze, WhatsAppie, Facebooku, X, Discordzie itp.
+     ZMIEŃ "https://TWOJA-DOMENA.pl/" na prawdziwy adres gry, a plik og-image.jpg
+     wgraj na serwer obok index.html. Adres obrazka musi być pełny (z https://). -->
+<meta name="description" content="Wyprawa Króla po legendarnej Kruszwicy: biegnij, skacz, zbieraj dukaty i bursztyny, przepłyń Gopło łodzią ZOSIA i odzyskaj zamek. Zagraj za darmo w przeglądarce!">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pl_PL">
+<meta property="og:site_name" content="Kruszwica - Wyprawa Króla">
+<meta property="og:title" content="Kruszwica - Wyprawa Króla">
+<meta property="og:description" content="Biegnij, skacz, zbieraj dukaty i bursztyny, przepłyń Gopło łodzią ZOSIA i odzyskaj zamek. Zagraj za darmo w przeglądarce!">
+<meta property="og:url" content="https://TWOJA-DOMENA.pl/">
+<meta property="og:image" content="https://TWOJA-DOMENA.pl/og-image.jpg">
+<meta property="og:image:secure_url" content="https://TWOJA-DOMENA.pl/og-image.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Król płynie łodzią ZOSIA po jeziorze Gopło - gra Kruszwica, Wyprawa Króla">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kruszwica - Wyprawa Króla">
+<meta name="twitter:description" content="Biegnij, skacz, zbieraj dukaty i przepłyń Gopło łodzią ZOSIA. Zagraj w przeglądarce!">
+<meta name="twitter:image" content="https://TWOJA-DOMENA.pl/og-image.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -529,17 +549,8 @@
           <button class="modal-close" id="modalCloseBtn" aria-label="Zamknij">×</button>
           <p class="eyebrow">Rok Pański 965, brzeg jeziora Gopło</p>
           <h1>Zanim ruszysz w drogę</h1>
-          <p class="legend">
-            Legenda głosi, że w zamczysku na wyspie ukarano niegdyś okrutnego księcia Popiela -
-            zjedzony został żywcem przez myszy, a jego imienia strzegły odtąd kruki, od których
-            wzięła nazwę Kruszwica. Jako prawowity Król wyrusz, by odzyskać zamek:
-            biegnij, skacz po murkach, rozbijaj skrzynie z łupem i przepędzaj gryzonie,
-            które zagradzają Ci drogę. Uważaj na przepaść, ostre kolce, kruki lecące
-            tuż nad ziemią i kołyszące się nisko wahadła strażnicze - każde z nich odbierze Ci życie!
-            U bram Mysiej Wieży czeka też strażnik z łukiem - pokonaj go strzałami, zanim on trafi Ciebie.
-            Uwaga: fortuna jest zmienna - ten sam czyn może przynieść raz grosze, a raz królewski skarb!
-          </p>
-          <label class="nick-label" for="nickInput">Podaj swe imię, królu</label>
+          <p class="legend">Podaj swoje imię lub nick - pod nim zapiszemy Twój wynik.</p>
+          <label class="nick-label" for="nickInput">Imię lub nick</label>
           <input id="nickInput" type="text" maxlength="16" placeholder="np. Piast" autocomplete="off">
           <div><button class="btn" id="startBtn">Rozpocznij wyprawę</button></div>
           <p class="hint">Sterowanie: krzyżak - bieg, A - skok, B - strzał (na komputerze: strzałki/AD, spacja/W, X).</p>
